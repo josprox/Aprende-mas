@@ -38,7 +38,7 @@ Sigue estos pasos para ejecutar el proyecto en tu entorno local:
 
 1.  **Clonar el repositorio** (si aún no lo tienes):
     ```bash
-    git clone <url-del-repositorio>
+    git clone https://github.com/josprox/Aprende-mas
     cd aprende_mas_flutter
     ```
 
