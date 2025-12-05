@@ -1,0 +1,85 @@
+Analyzing aprende_mas...                                        
+
+  error - Undefined name 'AppTheme' - lib\main.dart:21:14 - undefined_identifier
+   info - The variable name 'max_tokens' isn't a lowerCamelCase identifier - lib\models\api_models.dart:10:13 - non_constant_identifier_names
+   info - The variable name 'top_p' isn't a lowerCamelCase identifier - lib\models\api_models.dart:11:16 - non_constant_identifier_names
+   info - The variable name 'response_format' isn't a lowerCamelCase identifier - lib\models\api_models.dart:13:24 - non_constant_identifier_names
+   info - The variable name 'max_tokens' isn't a lowerCamelCase identifier - lib\models\api_models.dart:19:10 - non_constant_identifier_names
+   info - The variable name 'top_p' isn't a lowerCamelCase identifier - lib\models\api_models.dart:20:10 - non_constant_identifier_names
+   info - The variable name 'response_format' isn't a lowerCamelCase identifier - lib\models\api_models.dart:22:10 - non_constant_identifier_names
+   info - Don't invoke 'print' in production code - lib\repositories\study_repository.dart:30:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\study_repository.dart:39:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\study_repository.dart:81:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\study_repository.dart:85:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\study_repository.dart:221:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\study_repository.dart:245:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\study_repository.dart:269:15 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\study_repository.dart:280:17 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\study_repository.dart:294:15 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\study_repository.dart:302:13 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\study_repository.dart:314:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\repositories\study_repository.dart:319:7 - avoid_print
+warning - Unused import: 'package:aprende_mas/models/tables.dart' - lib\services\api\groq_api_service.dart:5:8 - unused_import
+warning - Unused import: 'package:drift/drift.dart' - lib\services\api\groq_api_service.dart:6:8 - unused_import
+   info - Don't invoke 'print' in production code - lib\services\api\groq_api_service.dart:34:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api\groq_api_service.dart:83:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api\groq_api_service.dart:90:7 - avoid_print
+   info - Parameter 'db' could be a super parameter - lib\services\database\app_database.dart:35:3 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\utils\theme.dart:60:26 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\utils\theme.dart:85:25 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - lib\viewmodels\aprende_viewmodel.dart:22:5 - avoid_print
+warning - Unused import: 'package:aprende_mas/viewmodels/providers.dart' - lib\viewmodels\backup_viewmodel.dart:2:8 - unused_import
+   info - Local variables should be final - lib\viewmodels\backup_viewmodel.dart:49:7 - prefer_final_locals
+   info - Local variables should be final - lib\viewmodels\backup_viewmodel.dart:78:7 - prefer_final_locals
+   info - Use 'const' for final variables initialized to a constant value - lib\viewmodels\module_detail_viewmodel.dart:114:5 - prefer_const_declarations
+warning - Unused import: 'package:aprende_mas/models/tables.dart' - lib\viewmodels\quiz_viewmodel.dart:1:8 - unused_import
+   info - Use 'isNotEmpty' instead of 'length' to test whether the collection is empty - lib\viewmodels\quiz_viewmodel.dart:256:20 - prefer_is_empty
+  error - The name 'Subject' isn't a type, so it can't be used as a type argument - lib\viewmodels\subject_viewmodel.dart:12:14 - non_type_as_type_argument
+  error - Undefined class 'Subject' - lib\viewmodels\subject_viewmodel.dart:13:9 - undefined_class
+  error - The name 'Subject' isn't a type, so it can't be used as a type argument - lib\viewmodels\subject_viewmodel.dart:31:10 - non_type_as_type_argument
+  error - Undefined class 'Subject' - lib\viewmodels\subject_viewmodel.dart:32:5 - undefined_class
+  error - Undefined class 'Subject' - lib\viewmodels\subject_viewmodel.dart:74:27 - undefined_class
+   info - Local variables should be final - lib\viewmodels\subject_viewmodel.dart:114:7 - prefer_final_locals
+   info - Local variables should be final - lib\viewmodels\subject_viewmodel.dart:120:9 - prefer_final_locals
+   info - Local variables should be final - lib\viewmodels\subject_viewmodel.dart:121:9 - prefer_final_locals
+  error - Undefined class 'Question' - lib\viewmodels\test_review_viewmodel.dart:6:9 - undefined_class
+  error - Undefined class 'UserAnswer' - lib\viewmodels\test_review_viewmodel.dart:7:9 - undefined_class
+  error - Undefined class 'TestAttempt' - lib\viewmodels\test_review_viewmodel.dart:25:9 - undefined_class
+  error - Undefined class 'Module' - lib\viewmodels\test_review_viewmodel.dart:26:9 - undefined_class
+  error - Undefined class 'TestAttempt' - lib\viewmodels\test_review_viewmodel.dart:38:5 - undefined_class
+  error - Undefined class 'Module' - lib\viewmodels\test_review_viewmodel.dart:39:5 - undefined_class
+   info - The imported package 'async' isn't a dependency of the importing package - lib\viewmodels\test_viewmodel.dart:3:8 - depend_on_referenced_packages
+   info - The imported package 'flutter_markdown' isn't a dependency of the importing package - lib\views\chat_screen.dart:3:8 - depend_on_referenced_packages
+  error - Target of URI doesn't exist: 'package:flutter_markdown/flutter_markdown.dart' - lib\views\chat_screen.dart:3:8 - uri_does_not_exist
+  error - The method 'MarkdownBody' isn't defined for the type '_MessageBubble' - lib\views\chat_screen.dart:159:15 - undefined_method
+  error - Undefined name 'MarkdownStyleSheet' - lib\views\chat_screen.dart:161:29 - undefined_identifier
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\chat_screen.dart:196:33 - deprecated_member_use
+  error - Undefined class 'TestAttemptWithModule' - lib\views\grades_screen.dart:52:9 - undefined_class
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\grades_screen.dart:64:38 - deprecated_member_use
+   info - The imported package 'flutter_markdown' isn't a dependency of the importing package - lib\views\module_detail_screen.dart:5:8 - depend_on_referenced_packages
+  error - Target of URI doesn't exist: 'package:flutter_markdown/flutter_markdown.dart' - lib\views\module_detail_screen.dart:5:8 - uri_does_not_exist
+  error - The method 'MarkdownBody' isn't defined for the type 'ModuleDetailScreen' - lib\views\module_detail_screen.dart:105:21 - undefined_method
+  error - Undefined name 'MarkdownStyleSheet' - lib\views\module_detail_screen.dart:108:35 - undefined_identifier
+  error - The argument type 'int' can't be assigned to the parameter type 'QuizParams'.  - lib\views\quiz_screen.dart:18:51 - argument_type_not_assignable
+  error - Too many positional arguments: 1 expected, but 2 found - lib\views\quiz_screen.dart:18:61 - extra_positional_arguments
+  error - The argument type 'int' can't be assigned to the parameter type 'QuizParams'.  - lib\views\quiz_screen.dart:20:29 - argument_type_not_assignable
+  error - Too many positional arguments: 1 expected, but 2 found - lib\views\quiz_screen.dart:20:39 - extra_positional_arguments
+   info - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre - lib\views\quiz_screen.dart:287:17 - deprecated_member_use
+   info - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre - lib\views\quiz_screen.dart:288:17 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\views\settings\legal_info_screen.dart:28:11 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\views\settings\legal_info_screen.dart:30:23 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\views\settings\legal_info_screen.dart:62:11 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\views\settings\legal_info_screen.dart:64:23 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\views\settings\legal_info_screen.dart:70:11 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\views\settings\legal_info_screen.dart:72:23 - prefer_const_literals_to_create_immutables
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\settings\settings_screen.dart:66:46 - deprecated_member_use
+  error - Undefined class 'Subject' - lib\views\subject_list_screen.dart:119:9 - undefined_class
+  error - Undefined class 'Subject' - lib\views\subject_list_screen.dart:181:9 - undefined_class
+  error - Undefined class 'TestAttemptWithModule' - lib\views\test_list_screen.dart:123:9 - undefined_class
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\test_list_screen.dart:151:40 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\test_review_screen.dart:137:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\test_review_screen.dart:138:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\test_review_screen.dart:234:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\test_review_screen.dart:239:52 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\views\test_review_screen.dart:244:61 - deprecated_member_use
+

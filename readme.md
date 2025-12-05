@@ -1,115 +1,76 @@
-# 🎓 Aprende +: Estudio Modular con Tests Generados por IA (JOSPROX MX)
+# Aprende Más 📱🎓
 
-> **Eslogan:** La forma más inteligente de aprender cualquier tema. Estructura tu conocimiento, genera exámenes únicos y gestiona tu contenido de estudio.
+**Aprende Más** es una aplicación móvil educativa moderna desarrollada en **Flutter (Dart)**, diseñada para ofrecer una experiencia de aprendizaje interactiva y eficiente. Esta versión marca la evolución completa del proyecto, migrando de una base nativa en Kotlin a un desarrollo multiplataforma robusto con Flutter.
 
-Una aplicación de estudio nativa de Android diseñada para optimizar el aprendizaje de cualquier tema a través de una jerarquía de contenido clara: **Materias → Módulos → Submódulos**. Construida al 100% con **Kotlin** y la modernidad de **Jetpack Compose (Material 3)**.
+## 🚀 Características Principales
 
----
+*   **📚 Gestión de Materias y Módulos**: Navegación intuitiva a través de asignaturas y sus contenidos detallados.
+*   **📝 Sistema de Evaluaciones**: 
+    *   Toma de **Cuestionarios (Quizzes)** interactivos.
+    *   Gestión de **Exámenes**.
+    *   **Revisión de Intentos** y retroalimentación detallada.
+*   **📊 Seguimiento de Progreso**: Visualización de calificaciones y rendimiento académico.
+*   **💬 Asistente Inteligente**: Chat integrado para soporte y consultas de aprendizaje.
+*   **💾 Funcionamiento Offline**: Persistencia de datos local robusta utilizando SQLite (Drift), permitiendo estudiar sin conexión constante.
+*   **🎨 Interfaz Moderna**: Diseño limpio y adaptable con soporte para temas (Modo Oscuro/Claro), utilizando Material Design 3.
 
-## ✨ Características Estelares
+## 🛠️ Stack Tecnológico
 
-### 🧠 Aprendizaje Dinámico y Modular
+El proyecto utiliza un conjunto de tecnologías modernas de Flutter para garantizar escalabilidad, mantenimiento y rendimiento:
 
-El diseño se basa en un flujo de estudio intuitivo:
+*   **Lenguaje**: [Dart](https://dart.dev/)
+*   **Framework**: [Flutter](https://flutter.dev/)
+*   **Gestión de Estado**: [Riverpod](https://riverpod.dev/) (con `riverpod_generator` y `riverpod_annotation` para un código más limpio y seguro).
+*   **Base de Datos Local**: [Drift](https://drift.simonbinder.eu/) (SQLite reactivo y seguro).
+*   **Conectividad HTTP**: [Dio](https://pub.dev/packages/dio).
+*   **Navegación**: Sistema de rutas nativo/GoRouter (según implementación).
+*   **UI/UX**: `google_fonts`, `google_nav_bar`, `dynamic_color`.
 
-1.  **Materias (Ej. "Redes de Computadoras")**
-2.  **Módulos (Ej. "Modelo OSI")**
-3.  **Submódulos (Contenido en Markdown)**
+## 🏁 Comenzando
 
-Esto permite una organización del conocimiento escalable, ideal para temas técnicos o académicos. 
+Sigue estos pasos para ejecutar el proyecto en tu entorno local:
 
-### 🤖 Generación de Exámenes con IA
+### Prerrequisitos
+*   [Flutter SDK](https://docs.flutter.dev/get-started/install) instalado.
+*   Un editor de código (VS Code o Android Studio) con las extensiones de Flutter/Dart.
 
-* **Tests Únicos:** Cada examen para un módulo es generado dinámicamente utilizando la **API de GroqCloud**, asegurando que el estudiante nunca repita las mismas preguntas.
-* **Gestión de Exámenes:** Permite **continuar** un test incompleto y ofrece una revisión detallada de la **calificación** para ver la pregunta, tu respuesta y la solución correcta.
-* **Reintentar:** Opción para borrar el historial de un módulo y generar un set de preguntas completamente nuevo.
+### Instalación
 
-### 📚 Gestión de Contenido Personalizado (UGC)
-
-* **Importación Sencilla:** Los usuarios pueden añadir sus propias materias de estudio a la aplicación importando un simple archivo **JSON** con el formato predefinido (ver sección `Formato de Importación`).
-* **Control Total:** Administra tu biblioteca con facilidad, incluyendo la eliminación rápida de materias no deseadas.
-
----
-
-## 🛠️ Stack Tecnológico (Modernidad y Rendimiento)
-
-El proyecto está construido bajo una arquitectura moderna para garantizar alto rendimiento y mantenibilidad:
-
-| Categoría | Tecnología | Propósito |
-| :--- | :--- | :--- |
-| **Frontend/UI** | **Jetpack Compose (Material 3)** | Interfaz de usuario moderna y declarativa. |
-| **Lenguaje** | **100% Kotlin** | Lenguaje primario. |
-| **Arquitectura** | **MVVM** | Separación limpia de la lógica de negocio y la UI. |
-| **Persistencia** | **Room** | Base de datos local para almacenar el contenido de estudio y el progreso. |
-| **Asincronía** | **Coroutines y Flows** | Manejo de tareas en segundo plano y flujos de datos reactivos. |
-| **Inyección** | **Hilt (Dagger-Hilt)** | Gestión robusta de dependencias. |
-| **IA/Network** | **GroqCloud API** | Generación dinámica de preguntas para los exámenes. |
-| **Utilidades** | `kotlinx.serialization` | Parseo eficiente del formato JSON. |
-| **Renderizado** | `compose-richtext` | Visualización del contenido de estudio escrito en **Markdown**. |
-
----
-
-## 🚀 Instalación y Configuración del Entorno
-
-Sigue estos pasos para poner la aplicación en funcionamiento:
-
-1.  **Clonar el Repositorio:**
+1.  **Clonar el repositorio** (si aún no lo tienes):
     ```bash
-    git clone https://github.com/josprox/Aprende-mas
+    git clone <url-del-repositorio>
+    cd aprende_mas_flutter
     ```
-2.  **Abrir Proyecto:** Abre la carpeta clonada en **Android Studio (versión 2023.2 o superior)**.
 
-3.  **Configurar la API Key (¡CRÍTICO!):**
-    * Obtén tu clave de API gratuita en el portal de [GroqCloud](https://console.groq.com/keys).
-    * Navega al archivo `data/network/GroqApiService.kt`.
-    * **Reemplaza** la variable `API_KEY` con tu clave personal:
-        ```kotlin
-        // Reemplaza "TU_API_KEY_AQUI"
-        private const val API_KEY = "TU_API_KEY_AQUI" 
-        ```
+2.  **Instalar dependencias**:
+    ```bash
+    flutter pub get
+    ```
 
-4.  **Ejecutar:** Sincroniza Gradle, construye y ejecuta el proyecto en un emulador o dispositivo físico.
+3.  **Generar código necesario** (Riverpod/Drift):
+    Este proyecto utiliza generación de código. Ejecuta el siguiente comando para generar los archivos `.g.dart`:
+    ```bash
+    dart run build_runner build --delete-conflicting-outputs
+    ```
+    *Para desarrollo continuo:* `dart run build_runner watch`
+
+4.  **Ejecutar la App**:
+    ```bash
+    flutter run
+    ```
+
+## 📄 Estructura del Proyecto
+
+*   `lib/models`: Modelos de datos y entidades de base de datos.
+*   `lib/repositories`: Capa de acceso a datos (Patrón Repositorio).
+*   `lib/services`: Lógica de negocio y servicios externos.
+*   `lib/viewmodels`: Gestión de estado de la UI (Riverpod providers/notifiers).
+*   `lib/views`: Pantallas y widgets de la interfaz de usuario.
+*   `lib/widgets`: Componentes UI reutilizables.
+
+## 🔄 Migración y Versiones
+
+> **Nota Importante:** Esta versión representa una reescritura completa y optimización del proyecto original en Kotlin. Todo el código base ahora es **100% Dart**, aprovechando las capacidades multiplataforma de Flutter para iOS y Android desde una única base de código.
 
 ---
-
-## 📄 Formato de Importación JSON (UGC Schema)
-
-Para añadir tu propio contenido de estudio (función "Añadir Materia"), utiliza estrictamente el siguiente esquema de archivo `.json`. Este archivo será parseado y persistido localmente.
-
-**Estructura Requerida (`mi_materia.json`):**
-
-```json
-{
-  "name": "Seguridad Informática",
-  "modules": [
-    {
-      "title": "Criptografía Básica",
-      "shortDescription": "Aprende sobre cifrado simétrico y asimétrico.",
-      "submodules": [
-        {
-          "title": "Cifrado Simétrico",
-          "contentMd": "### ¿Qué es?\nEl cifrado simétrico usa la misma clave para cifrar y descifrar..."
-        },
-        {
-          "title": "Cifrado Asimétrico",
-          "contentMd": "### ¿Qué es?\nEl cifrado asimétrico usa una clave pública y una privada..."
-        }
-      ]
-    }
-  ]
-}
-````
-
------
-
-## 📜 Licencia y Contacto
-
-Este proyecto está bajo una **Licencia de Código Fuente Consultable y Contribución Restringida (LCSCR)**.
-
-* El código fuente está disponible para **consulta y aportación** (contribuciones).
-* **Prohibida** la modificación, redistribución, republicación o uso comercial del código principal.
-
-**Desarrollado por:** Melchor Estrada José Luis - JOSPROX MX
-
-**Soporte Oficial y Consultas de Licencia:**
-[https://josprox.com/soporte/](https://josprox.com/soporte/)
+Desarrollado con ❤️ para el aprendizaje continuo.
