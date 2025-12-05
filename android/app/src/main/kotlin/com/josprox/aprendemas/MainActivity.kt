@@ -1,4 +1,4 @@
-package com.josprox.aprendemas.aprende_mas
+package com.josprox.aprendemas
 
 import io.flutter.embedding.android.FlutterActivity
 
