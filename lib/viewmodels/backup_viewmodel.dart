@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:aprende_mas/viewmodels/providers.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -83,13 +84,18 @@ class BackupViewModel extends StateNotifier<BackupUiState> {
           final dbFolder = await getApplicationDocumentsDirectory();
           final file = File(p.join(dbFolder.path, 'db.sqlite'));
 
+          // 1. Close the current database connection to release the lock
+          await ref.read(databaseProvider).close();
+
+          // 2. Overwrite the database file
           await File(path).copy(file.path);
 
-          // Trigger a database reload or ask user to restart
+          // 3. Invalidate the provider to force a reload/reconnection on next use
+          ref.invalidate(databaseProvider);
+
           state = state.copyWith(
             isLoading: false,
-            message:
-                "Restauración completada. Por favor reinicia la aplicación.",
+            message: "Datos restaurados correctamente.",
           );
         }
       } else {

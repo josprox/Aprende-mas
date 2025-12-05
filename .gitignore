@@ -88,3 +88,7 @@ app.*.map.json
 
 # Environment variables
 .env
+
+# Keystore
+*.jks
+*.keystore
