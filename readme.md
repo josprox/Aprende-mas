@@ -59,6 +59,38 @@ Sigue estos pasos para ejecutar el proyecto en tu entorno local:
     flutter run
     ```
 
+
+## ⚙️ Configuración y Despliegue
+
+### Gestión de Claves (Signing)
+Para compilar versiones de producción (o debug firmadas), el proyecto espera un archivo `android/key.properties` que **NO** se sube al repositorio por seguridad.
+
+1.  Copia el archivo de ejemplo:
+    ```bash
+    cp android/key.properties.example android/key.properties
+    ```
+2.  Edita `android/key.properties` con tus credenciales reales del Keystore.
+3.  El archivo `build.gradle` leerá estas propiedades automáticamente para firmar la app.
+    *   **Nota**: Las versiones de debug tendrán automáticamente el sufijo de paquete `.debug` (ej: `com.josprox.aprendemas.debug`) para poder instalarse junto a la versión de producción.
+
+### Splash Screen Personalizado
+El proyecto utiliza `flutter_native_splash` para generar pantallas de carga nativas optimizadas (incluyendo soporte para el recorte circular de Android 12+).
+
+*   Configuración: `flutter_native_splash.yaml`
+*   Imagen base: `assets/img/logo.png`
+*   **Regenerar Splash**:
+    Si cambias el logo, ejecuta:
+    ```bash
+    dart run flutter_native_splash:create
+    ```
+    *Nota: Se utiliza un script interno para evitar recortes en Android 12, asegurando que el logo tenga el padding correcto.*
+
+## 💾 Backup y Restauración Avanzada
+
+La aplicación cuenta con un sistema robusto de copias de seguridad:
+*   **Backup**: Exporta tu base de datos completa a un archivo `.db`.
+*   **Restauración en Caliente**: Al restaurar un archivo de respaldo, la aplicación **recarga automáticamente** la conexión a la base de datos y actualiza la interfaz sin necesidad de reiniciar la app.
+
 ## 📄 Estructura del Proyecto
 
 *   `lib/models`: Modelos de datos y entidades de base de datos.
