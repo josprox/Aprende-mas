@@ -1,3 +1,4 @@
+import 'package:aprende_mas/models/subject_models.dart';
 import 'package:aprende_mas/viewmodels/providers.dart';
 import 'package:aprende_mas/views/chat_screen.dart';
 import 'package:aprende_mas/views/quiz_screen.dart';
@@ -18,7 +19,7 @@ class ModuleDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: FutureBuilder(
+        title: FutureBuilder<Module?>(
           future: moduleFuture,
           builder: (context, snapshot) {
             if (snapshot.hasData) {
@@ -69,7 +70,7 @@ class ModuleDetailScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: StreamBuilder(
+      body: StreamBuilder<List<Submodule>>(
         stream: submodulesStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {

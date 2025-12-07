@@ -1,6 +1,6 @@
-import 'package:aprende_mas/services/database/app_database.dart';
+import 'package:aprende_mas/models/subject_models.dart';
 import 'package:aprende_mas/viewmodels/providers.dart';
-import 'package:drift/drift.dart' as drift;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class QuizUiState {
@@ -115,7 +115,7 @@ class QuizViewModel extends StateNotifier<QuizUiState> {
       return;
     }
 
-    final score = savedAnswers.where((a) => a.isCorrect).length;
+    final score = savedAnswers.where((a) => a.isCorrect == 1).length;
     final currentIndex = _currentAttempt!.currentQuestionIndex;
     final answeredQIds = savedAnswers.map((a) => a.questionId).toSet();
 
@@ -225,12 +225,12 @@ class QuizViewModel extends StateNotifier<QuizUiState> {
 
     final repository = ref.read(studyRepositoryProvider);
     await repository.saveUserAnswer(
-      UserAnswersCompanion.insert(
+      UserAnswer(
         testAttemptId: attemptId,
-        questionId: question.id,
+        questionId: question.id!,
         selectedOption: selectedOption,
-        isCorrect: isCorrect,
-        explanationText: drift.Value(feedback),
+        isCorrect: isCorrect ? 1 : 0,
+        explanationText: feedback,
       ),
     );
   }
@@ -246,7 +246,7 @@ class QuizViewModel extends StateNotifier<QuizUiState> {
     _currentAttempt = updatedAttempt;
 
     final repository = ref.read(studyRepositoryProvider);
-    await repository.updateTestAttempt(updatedAttempt.toCompanion(true));
+    await repository.updateTestAttempt(updatedAttempt);
   }
 
   Future<void> _finalizeAttempt() async {
@@ -266,7 +266,7 @@ class QuizViewModel extends StateNotifier<QuizUiState> {
     );
 
     final repository = ref.read(studyRepositoryProvider);
-    await repository.updateTestAttempt(finalAttempt.toCompanion(true));
+    await repository.updateTestAttempt(finalAttempt);
   }
 }
 

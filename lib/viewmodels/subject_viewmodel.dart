@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'dart:io';
-import 'package:aprende_mas/services/database/app_database.dart';
+import 'package:aprende_mas/models/subject_models.dart';
 import 'package:aprende_mas/viewmodels/providers.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -59,6 +59,9 @@ class SubjectNotifier extends StateNotifier<SubjectUiState> {
         state = state.copyWith(subjects: subjects);
       }
     });
+
+    // Check for updates in background
+    Future.microtask(() => repository.checkForUpdates());
   }
 
   @override
@@ -80,7 +83,7 @@ class SubjectNotifier extends StateNotifier<SubjectUiState> {
     if (subject != null) {
       try {
         final repository = ref.read(studyRepositoryProvider);
-        await repository.deleteSubject(subject.id);
+        await repository.deleteSubject(subject.id!);
         state = state.copyWith(successMessage: "${subject.name} eliminado");
       } catch (e) {
         state = state.copyWith(errorMessage: "Error al eliminar la materia");
@@ -140,7 +143,7 @@ class SubjectNotifier extends StateNotifier<SubjectUiState> {
 
     try {
       final repository = ref.read(studyRepositoryProvider);
-      await repository.updateSubjectFromJson(subject.id, jsonString);
+      await repository.updateSubjectFromJson(subject.id!, jsonString);
       state = state.copyWith(successMessage: "¡Materia actualizada con éxito!");
     } catch (e) {
       state = state.copyWith(errorMessage: "Error al actualizar: $e");

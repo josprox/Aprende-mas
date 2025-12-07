@@ -1,4 +1,4 @@
-import 'package:aprende_mas/services/database/app_database.dart';
+import 'package:aprende_mas/models/subject_models.dart';
 
 abstract class IStudyRepository {
   Stream<List<Subject>> getAllSubjects();
@@ -12,13 +12,14 @@ abstract class IStudyRepository {
   Future<TestAttempt?> findPendingTest(int moduleId);
   Future<TestAttempt?> getTestAttemptById(int attemptId);
   Future<List<UserAnswer>> getUserAnswersForAttempt(int attemptId);
-  Future<void> saveUserAnswer(UserAnswersCompanion answer);
-  Future<void> updateTestAttempt(TestAttemptsCompanion attempt);
+  Future<void> saveUserAnswer(UserAnswer answer);
+  Future<void> updateTestAttempt(TestAttempt attempt);
   Future<Module?> getModuleById(int moduleId);
   Future<List<Question>> getOriginalQuestionsForModule(int moduleId);
   Future<void> forceRegenerateQuestions(int moduleId);
-  Future<void> importSubjectFromJson(String jsonString);
+  Future<void> importSubjectFromJson(String jsonString, {int? repositoryId});
   Future<void> deleteSubject(int subjectId);
   Future<void> updateSubjectFromJson(int subjectId, String jsonString);
+  Future<void> checkForUpdates();
   Future<void> deleteTestAttempt(int attemptId);
 }

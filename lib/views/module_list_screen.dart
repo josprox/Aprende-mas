@@ -1,3 +1,4 @@
+import 'package:aprende_mas/models/subject_models.dart';
 import 'package:aprende_mas/viewmodels/providers.dart';
 import 'package:aprende_mas/views/module_detail_screen.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +19,7 @@ class ModuleListScreen extends ConsumerWidget {
         title: const Text("Módulos de Contenido"),
         backgroundColor: Theme.of(context).colorScheme.surface,
       ),
-      body: StreamBuilder(
+      body: StreamBuilder<List<Module>>(
         stream: modulesStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -45,7 +46,7 @@ class ModuleListScreen extends ConsumerWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
-                            ModuleDetailScreen(moduleId: module.id),
+                            ModuleDetailScreen(moduleId: module.id!),
                       ),
                     );
                   },

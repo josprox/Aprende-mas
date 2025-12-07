@@ -57,7 +57,7 @@ class GroqApiService {
                        "optionC": "Opción C (respuesta correcta)",
                        "optionD": "Opción D (distractor plausible)",
                        "correctAnswer": "C",
-                       "explanationText": "Correcto, el concepto X es fundamental en la capa Y porque..."
+                       "explanationText": "Correcto, el concepto X es fundamental en la capa Y porque..." // <--- ¡NUEVA ESTRUCTURA!
                     }
                 ]
             }

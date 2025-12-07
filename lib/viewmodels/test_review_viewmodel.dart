@@ -1,4 +1,4 @@
-import 'package:aprende_mas/services/database/app_database.dart';
+import 'package:aprende_mas/models/subject_models.dart';
 import 'package:aprende_mas/viewmodels/providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

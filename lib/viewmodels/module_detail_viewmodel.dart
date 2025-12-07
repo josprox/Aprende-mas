@@ -106,9 +106,22 @@ class ModuleDetailViewModel extends StateNotifier<ModuleDetailUiState> {
     );
 
     // Prepare API messages
-    final apiMessages = currentHistory
-        .map((m) => Message(role: m.role, content: m.content))
-        .toList();
+    // Prepare API messages
+    final repository = ref.read(studyRepositoryProvider);
+    final submodulesStream = repository.getSubmodulesForModule(moduleId);
+    final submodules = await submodulesStream.first;
+    final contextContent = submodules.map((s) => s.contentMd).join("\n\n");
+
+    final systemMessage = Message(
+      role: 'system',
+      content:
+          "Eres un tutor experto en esta materia. Tu objetivo es ayudar al estudiante a entender el siguiente contenido. DEBES basar tus respuestas estrictamente en este contenido. Si te preguntan algo fuera de este tema, indica amablemente que solo puedes responder sobre la materia.\n\nCONTENIDO DE LA MATERIA:\n$contextContent",
+    );
+
+    final apiMessages = [
+      systemMessage,
+      ...currentHistory.map((m) => Message(role: m.role, content: m.content)),
+    ];
 
     // Add placeholder for AI response
     const aiPlaceholder = ChatMessage(

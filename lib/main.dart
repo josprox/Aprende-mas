@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,16 +35,31 @@ class MyApp extends ConsumerWidget {
             useMaterial3: true,
             colorScheme:
                 lightDynamic ??
-                ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+                ColorScheme.fromSeed(
+                  seedColor: Colors.indigo,
+                  brightness: Brightness.light,
+                ),
+            textTheme: GoogleFonts.outfitTextTheme(ThemeData.light().textTheme),
+            appBarTheme: const AppBarTheme(
+              centerTitle: false,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+            ),
           ),
           darkTheme: ThemeData(
             useMaterial3: true,
             colorScheme:
                 darkDynamic ??
                 ColorScheme.fromSeed(
-                  seedColor: Colors.deepPurple,
+                  seedColor: Colors.indigo,
                   brightness: Brightness.dark,
                 ),
+            textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme),
+            appBarTheme: const AppBarTheme(
+              centerTitle: false,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+            ),
           ),
           themeMode: ThemeMode.system,
           home: const MainScreen(),

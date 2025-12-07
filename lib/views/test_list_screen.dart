@@ -1,4 +1,4 @@
-import 'package:aprende_mas/services/database/app_database.dart';
+import 'package:aprende_mas/models/subject_models.dart';
 import 'package:aprende_mas/viewmodels/test_viewmodel.dart';
 import 'package:aprende_mas/views/quiz_screen.dart';
 import 'package:aprende_mas/views/test_review_screen.dart';
@@ -40,7 +40,7 @@ class TestListScreen extends ConsumerWidget {
               onPressed: () {
                 ref
                     .read(testViewModelProvider.notifier)
-                    .deleteTestAttempt(test.attempt.id);
+                    .deleteTestAttempt(test.attempt.id!);
                 Navigator.of(context).pop();
               },
               style: FilledButton.styleFrom(
@@ -127,7 +127,7 @@ class TestListScreen extends ConsumerWidget {
                           MaterialPageRoute(
                             builder: (context) => QuizScreen(
                               moduleId: test.attempt.moduleId,
-                              attemptId: test.attempt.id,
+                              attemptId: test.attempt.id!,
                             ),
                           ),
                         );
@@ -187,7 +187,7 @@ class TestListScreen extends ConsumerWidget {
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                TestReviewScreen(attemptId: test.attempt.id),
+                                TestReviewScreen(attemptId: test.attempt.id!),
                           ),
                         );
                       },

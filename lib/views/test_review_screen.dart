@@ -125,7 +125,7 @@ class _ReviewQuestionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final question = reviewedQuestion.question;
     final userAnswer = reviewedQuestion.userAnswer;
-    final isUserCorrect = userAnswer.isCorrect;
+    final isUserCorrect = userAnswer.isCorrect == 1;
     final colorScheme = Theme.of(context).colorScheme;
 
     return Card(

@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:aprende_mas/viewmodels/providers.dart';
+import 'package:aprende_mas/services/database/database_helper.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -38,9 +38,7 @@ class BackupViewModel extends StateNotifier<BackupUiState> {
     );
     try {
       final dbFolder = await getApplicationDocumentsDirectory();
-      final file = File(
-        p.join(dbFolder.path, 'db.sqlite'),
-      ); // Assuming Drift uses this name by default or configured
+      final file = File(p.join(dbFolder.path, 'aprende_mas.db'));
 
       if (!await file.exists()) {
         throw Exception("Base de datos no encontrada");
@@ -82,16 +80,13 @@ class BackupViewModel extends StateNotifier<BackupUiState> {
         final path = result.files.single.path;
         if (path != null) {
           final dbFolder = await getApplicationDocumentsDirectory();
-          final file = File(p.join(dbFolder.path, 'db.sqlite'));
+          final file = File(p.join(dbFolder.path, 'aprende_mas.db'));
 
           // 1. Close the current database connection to release the lock
-          await ref.read(databaseProvider).close();
+          await DatabaseHelper.instance.close();
 
           // 2. Overwrite the database file
           await File(path).copy(file.path);
-
-          // 3. Invalidate the provider to force a reload/reconnection on next use
-          ref.invalidate(databaseProvider);
 
           state = state.copyWith(
             isLoading: false,

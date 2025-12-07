@@ -1,7 +1,9 @@
-import 'package:aprende_mas/services/database/app_database.dart';
+import 'package:aprende_mas/models/subject_models.dart';
+
 import 'package:aprende_mas/viewmodels/subject_viewmodel.dart';
 import 'package:aprende_mas/views/module_list_screen.dart';
 import 'package:aprende_mas/widgets/subject_card.dart';
+import 'package:aprende_mas/views/repository_store_screen.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -76,28 +78,26 @@ class SubjectListScreen extends ConsumerWidget {
     void showOptionsSheet(Subject subject) {
       showModalBottomSheet(
         context: context,
+        showDragHandle: true, // M3 specific
         builder: (context) {
           return SafeArea(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: 8),
-                Container(
-                  width: 32,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.outlineVariant,
-                    borderRadius: BorderRadius.circular(2),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24.0,
+                    vertical: 8.0,
+                  ),
+                  child: Text(
+                    subject.name,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  subject.name,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
+                const Divider(),
                 ListTile(
                   leading: const Icon(Icons.file_upload_outlined),
                   title: const Text("Actualizar contenido (JSON)"),
@@ -132,64 +132,84 @@ class SubjectListScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Biblioteca de Materias",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.transparent,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar.large(
+            title: const Text("Biblioteca"),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.storefront_outlined),
+                tooltip: 'Tienda de Materias',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const RepositoryStoreScreen(),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+          state.subjects.isEmpty
+              ? SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.school_outlined,
+                          size: 64,
+                          color: Theme.of(context).colorScheme.surfaceVariant,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          "No hay materias",
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        const Text("Importa una para empezar a aprender."),
+                      ],
+                    ),
+                  ),
+                )
+              : SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final subject = state.subjects[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: SubjectCard(
+                          subject: subject,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ModuleListScreen(subjectId: subject.id!),
+                              ),
+                            );
+                          },
+                          onOptionsTap: () {
+                            notifier.onSubjectLongPress(subject);
+                            showOptionsSheet(subject);
+                          },
+                        ),
+                      );
+                    }, childCount: state.subjects.length),
+                  ),
+                ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           notifier.prepareForFileAction(FileAction.import);
           notifier.pickAndProcessFile();
         },
-        icon: const Icon(Icons.file_upload),
+        icon: const Icon(Icons.add),
         label: const Text("Importar"),
-        backgroundColor: Theme.of(context).colorScheme.tertiaryContainer,
-        foregroundColor: Theme.of(context).colorScheme.onTertiaryContainer,
       ),
-      body: state.subjects.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.school_outlined,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.surfaceVariant,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text("No hay materias. Importa una para empezar."),
-                ],
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-              itemCount: state.subjects.length,
-              itemBuilder: (context, index) {
-                final subject = state.subjects[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0),
-                  child: SubjectCard(
-                    subject: subject,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              ModuleListScreen(subjectId: subject.id),
-                        ),
-                      );
-                    },
-                    onOptionsTap: () {
-                      notifier.onSubjectLongPress(subject);
-                      showOptionsSheet(subject);
-                    },
-                  ),
-                );
-              },
-            ),
     );
   }
 }

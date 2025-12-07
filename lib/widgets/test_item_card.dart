@@ -1,4 +1,4 @@
-import 'package:aprende_mas/services/database/app_database.dart';
+import 'package:aprende_mas/models/subject_models.dart';
 import 'package:flutter/material.dart';
 
 class TestItemCard extends StatelessWidget {

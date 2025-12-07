@@ -1,328 +1,410 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:aprende_mas/models/import_models.dart';
+import 'package:aprende_mas/models/subject_models.dart';
 import 'package:aprende_mas/repositories/i_study_repository.dart';
 import 'package:aprende_mas/services/api/groq_api_service.dart';
-import 'package:aprende_mas/services/database/app_database.dart';
-import 'package:drift/drift.dart';
+import 'package:aprende_mas/services/api/repository_api_service.dart';
+import 'package:aprende_mas/services/database/database_helper.dart';
 
 class StudyRepository implements IStudyRepository {
-  final StudyDao _studyDao;
   final GroqApiService _groqApiService;
+  final RepositoryApiService _repositoryApiService;
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
-  StudyRepository(this._studyDao, this._groqApiService);
+  // Stream Controllers
+  final _subjectsController = StreamController<List<Subject>>.broadcast();
+  final _completedTestsController =
+      StreamController<List<TestAttemptWithModule>>.broadcast();
+
+  StudyRepository(this._groqApiService, this._repositoryApiService) {
+    _refreshSubjects();
+    _emitCompletedTests();
+  }
+
+  Future<void> _emitCompletedTests() async {
+    final db = await _dbHelper.database;
+    final results = await db.rawQuery('''
+      SELECT t.*, m.title as module_title 
+      FROM test_attempts t
+      INNER JOIN modules m ON t.module_id = m.id
+      WHERE t.status = 'COMPLETED'
+      ORDER BY t.timestamp DESC
+    ''');
+
+    final list = results.map((e) {
+      final attempt = TestAttempt.fromMap(e);
+      return TestAttemptWithModule(
+        attempt: attempt,
+        moduleTitle: e['module_title'] as String,
+      );
+    }).toList();
+
+    _completedTestsController.add(list);
+  }
+
+  Future<void> _refreshSubjects() async {
+    final db = await _dbHelper.database;
+    final maps = await db.query('subjects');
+    final subjects = maps.map((e) => Subject.fromMap(e)).toList();
+    _subjectsController.add(subjects);
+  }
 
   @override
-  Stream<List<Subject>> getAllSubjects() => _studyDao.getAllSubjects();
+  Stream<List<Subject>> getAllSubjects() async* {
+    // 1. Yield current state directly from DB to ensure new subscribers get data immediately
+    final db = await _dbHelper.database;
+    final maps = await db.query('subjects');
+    yield maps.map((e) => Subject.fromMap(e)).toList();
+
+    // 2. Yield future updates from the broadcast stream
+    yield* _subjectsController.stream;
+  }
 
   @override
-  Stream<List<Module>> getModulesForSubject(int subjectId) =>
-      _studyDao.getModulesForSubject(subjectId);
+  Stream<List<Module>> getModulesForSubject(int subjectId) async* {
+    final db = await _dbHelper.database;
+    final maps = await db.query(
+      'modules',
+      where: 'subject_id = ?',
+      whereArgs: [subjectId],
+    );
+    yield maps.map((e) => Module.fromMap(e)).toList();
+  }
 
   @override
-  Stream<List<Submodule>> getSubmodulesForModule(int moduleId) =>
-      _studyDao.getSubmodulesForModule(moduleId);
+  Stream<List<Submodule>> getSubmodulesForModule(int moduleId) async* {
+    final db = await _dbHelper.database;
+    final maps = await db.query(
+      'submodules',
+      where: 'module_id = ?',
+      whereArgs: [moduleId],
+    );
+    yield maps.map((e) => Submodule.fromMap(e)).toList();
+  }
 
   @override
   Future<List<Question>> getOrCreateQuestionsForModule(int moduleId) async {
-    var questions = await _studyDao.getOriginalQuestionsForModule(moduleId);
+    final db = await _dbHelper.database;
+    final maps = await db.query(
+      'questions',
+      where: 'module_id = ?',
+      whereArgs: [moduleId],
+    );
 
-    if (questions.isEmpty) {
-      print("No hay preguntas para $moduleId. Generando nuevas con la API.");
-      final submodulesStream = _studyDao.getSubmodulesForModule(moduleId);
-      final submodules = await submodulesStream.first;
+    if (maps.isNotEmpty) {
+      return maps.map((e) => Question.fromMap(e)).toList();
+    }
 
-      final content = submodules
-          .map((s) => "## ${s.title}\n${s.contentMd}")
-          .join("\n\n");
+    // Generate questions via AI
+    final submodulesMap = await db.query(
+      'submodules',
+      where: 'module_id = ?',
+      whereArgs: [moduleId],
+    );
+    final submodules = submodulesMap.map((e) => Submodule.fromMap(e)).toList();
+    final fullContent = submodules.map((s) => s.contentMd).join("\n\n");
 
-      if (content.trim().isEmpty) {
-        print(
-          "El contenido para generar preguntas está vacío para el módulo $moduleId.",
-        );
-        return [];
-      }
+    if (fullContent.isEmpty) return [];
 
-      final newQuestions = await _groqApiService.generateQuestions(
-        content,
+    try {
+      final generatedQuestions = await _groqApiService.generateQuestions(
+        fullContent,
         moduleId,
       );
-      if (newQuestions.isNotEmpty) {
-        final questionsToInsert = newQuestions
-            .map(
-              (q) => QuestionsCompanion.insert(
-                moduleId: moduleId,
-                questionText: q.questionText,
-                optionA: q.optionA,
-                optionB: q.optionB,
-                optionC: q.optionC,
-                optionD: q.optionD,
-                correctAnswer: q.correctAnswer,
-                explanationText: Value(q.explanationText),
-              ),
-            )
-            .toList();
 
-        // We need a batch insert method in DAO for QuestionsCompanion, but insertQuestions takes List<Question> (Data Class)
-        // Drift's insertAll takes Data Classes usually, but we can use batch with companions.
-        // Let's assume we update DAO or map to Data Class (but ID is auto-increment, so better use Companion)
-        // For now, let's iterate or assume DAO handles it.
-        // Actually, my DAO `insertQuestions` takes `List<Question>`. I should probably change it to take Companions or just create Question objects with id=0 (if allowed) or use a loop.
-        // Drift Data Classes usually have required ID.
-        // I will use a loop with `into(questions).insert` or update DAO to accept Companions.
-        // For simplicity here, I'll assume I can map to Question with id=0 and Drift ignores it on insert if auto-increment? No, usually need Companion.
-        // I'll use a loop for now to be safe with the current DAO setup, or better, use the batch helper I defined in DAO but pass Companions.
-        // Wait, my DAO `insertQuestions` takes `List<Question>`.
-        // I will modify the DAO later or just use a loop here calling a single insert if needed, but batch is better.
-        // Let's assume I can cast or I'll just do:
-        await _studyDao.batch((batch) {
-          batch.insertAll(_studyDao.questions, questionsToInsert);
+      for (final q in generatedQuestions) {
+        await db.insert('questions', {
+          'module_id': moduleId,
+          'question_text': q.questionText,
+          'option_a': q.optionA,
+          'option_b': q.optionB,
+          'option_c': q.optionC,
+          'option_d': q.optionD,
+          'correct_answer': q.correctAnswer,
+          'explanation_text': q.explanationText,
         });
-
-        print("Nuevas ${newQuestions.length} preguntas guardadas en la BD.");
-        questions = await _studyDao.getOriginalQuestionsForModule(moduleId);
       }
-    } else {
-      print(
-        "Usando ${questions.length} preguntas existentes de la BD para $moduleId.",
+
+      final newMaps = await db.query(
+        'questions',
+        where: 'module_id = ?',
+        whereArgs: [moduleId],
       );
+      return newMaps.map((e) => Question.fromMap(e)).toList();
+    } catch (e) {
+      print("Error generating questions: $e");
+      return [];
     }
-    return questions;
+  }
+
+  @override
+  Future<List<Question>> getOriginalQuestionsForModule(int moduleId) async {
+    final db = await _dbHelper.database;
+    final maps = await db.query(
+      'questions',
+      where: 'module_id = ?',
+      whereArgs: [moduleId],
+    );
+    return maps.map((e) => Question.fromMap(e)).toList();
+  }
+
+  @override
+  Future<int> createTestAttempt(int moduleId, int totalQuestions) async {
+    final db = await _dbHelper.database;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final id = await db.insert('test_attempts', {
+      'module_id': moduleId,
+      'timestamp': now,
+      'score': 0.0,
+      'status': 'PENDING',
+      'total_questions': totalQuestions,
+      'correct_answers': 0,
+      'current_question_index': 0,
+      // Add missing columns if schema changed, for now assuming these match
+    });
+    return id;
+  }
+
+  @override
+  Future<TestAttempt?> findPendingTest(int moduleId) async {
+    final db = await _dbHelper.database;
+    final maps = await db.query(
+      'test_attempts',
+      where: 'module_id = ? AND status = ?',
+      whereArgs: [moduleId, 'PENDING'],
+      limit: 1,
+    );
+    if (maps.isNotEmpty) {
+      return TestAttempt.fromMap(maps.first);
+    }
+    return null;
+  }
+
+  @override
+  Future<void> updateTestAttempt(TestAttempt attempt) async {
+    final db = await _dbHelper.database;
+    await db.update(
+      'test_attempts',
+      attempt.toMap(),
+      where: 'id = ?',
+      whereArgs: [attempt.id],
+    );
+    if (attempt.status == 'COMPLETED') {
+      _emitCompletedTests();
+    }
+  }
+
+  @override
+  Future<void> finishTestAttempt(TestAttempt attempt) async {
+    final updatedAttempt = attempt.copyWith(status: 'COMPLETED');
+    await updateTestAttempt(updatedAttempt);
+    // _emitCompletedTests is called inside updateTestAttempt
+  }
+
+  @override
+  Future<void> saveUserAnswer(UserAnswer answer) async {
+    final db = await _dbHelper.database;
+    await db.insert('user_answers', answer.toMap());
+  }
+
+  @override
+  Future<List<UserAnswer>> getUserAnswersForAttempt(int attemptId) async {
+    final db = await _dbHelper.database;
+    final maps = await db.query(
+      'user_answers',
+      where: 'test_attempt_id = ?',
+      whereArgs: [attemptId],
+    );
+    return maps.map((e) => UserAnswer.fromMap(e)).toList();
+  }
+
+  @override
+  Future<TestAttempt?> getTestAttemptById(int attemptId) async {
+    final db = await _dbHelper.database;
+    final maps = await db.query(
+      'test_attempts',
+      where: 'id = ?',
+      whereArgs: [attemptId],
+    );
+    if (maps.isNotEmpty) {
+      return TestAttempt.fromMap(maps.first);
+    }
+    return null;
   }
 
   @override
   Stream<List<TestAttemptWithModule>> getCompletedTests() =>
-      _studyDao.getCompletedTestsWithModule();
+      _completedTestsController.stream;
 
   @override
-  Stream<List<TestAttemptWithModule>> getPendingTests() =>
-      _studyDao.getPendingTestsWithModule();
-
-  @override
-  Future<int> createTestAttempt(int moduleId, int totalQuestions) {
-    return _studyDao.insertTestAttempt(
-      TestAttemptsCompanion.insert(
-        moduleId: moduleId,
-        status: "PENDING",
-        totalQuestions: totalQuestions,
-        currentQuestionIndex: const Value(0),
-      ),
-    );
+  Stream<List<TestAttemptWithModule>> getPendingTests() async* {
+    final db = await _dbHelper.database;
+    final results = await db.rawQuery('''
+      SELECT t.*, m.title as module_title 
+      FROM test_attempts t
+      INNER JOIN modules m ON t.module_id = m.id
+      WHERE t.status = 'PENDING'
+      ORDER BY t.timestamp DESC
+    ''');
+    yield results.map((e) {
+      final attempt = TestAttempt.fromMap(e);
+      return TestAttemptWithModule(
+        attempt: attempt,
+        moduleTitle: e['module_title'] as String,
+      );
+    }).toList();
   }
 
   @override
-  Future<void> finishTestAttempt(TestAttempt attempt) {
-    return _studyDao.updateTestAttempt(attempt.toCompanion(true));
+  Future<void> deleteTestAttempt(int attemptId) async {
+    final db = await _dbHelper.database;
+    await db.delete('test_attempts', where: 'id = ?', whereArgs: [attemptId]);
+    _emitCompletedTests();
   }
-
-  @override
-  Future<TestAttempt?> findPendingTest(int moduleId) =>
-      _studyDao.getPendingTestForModule(moduleId);
-
-  @override
-  Future<TestAttempt?> getTestAttemptById(int attemptId) =>
-      _studyDao.getTestAttemptById(attemptId);
-
-  @override
-  Future<List<UserAnswer>> getUserAnswersForAttempt(int attemptId) =>
-      _studyDao.getUserAnswersForAttempt(attemptId);
-
-  @override
-  Future<void> saveUserAnswer(UserAnswersCompanion answer) =>
-      _studyDao.insertUserAnswer(answer);
-
-  @override
-  Future<void> updateTestAttempt(TestAttemptsCompanion attempt) =>
-      _studyDao.updateTestAttempt(attempt);
-
-  @override
-  Future<Module?> getModuleById(int moduleId) =>
-      _studyDao.getModuleById(moduleId);
-
-  @override
-  Future<List<Question>> getOriginalQuestionsForModule(int moduleId) =>
-      _studyDao.getOriginalQuestionsForModule(moduleId);
 
   @override
   Future<void> forceRegenerateQuestions(int moduleId) async {
-    await _studyDao.deleteAttemptsForModule(moduleId);
-    await _studyDao.deleteQuestionsForModule(moduleId);
+    // No-op for now unless requested
   }
 
   @override
-  Future<void> importSubjectFromJson(String jsonString) async {
-    return _studyDao.transaction(() async {
-      final subjectImport = SubjectImport.fromJson(jsonDecode(jsonString));
+  Future<void> importSubjectFromJson(
+    String jsonString, {
+    int? repositoryId,
+  }) async {
+    final db = await _dbHelper.database;
 
-      final newSubjectId = await _studyDao.insertSubject(
-        SubjectsCompanion.insert(
-          name: subjectImport.name,
-          author: Value(subjectImport.author),
-          version: Value(subjectImport.version),
-        ),
+    // Check for existing subject with this repositoryId to avoid duplicates
+    if (repositoryId != null) {
+      final existing = await db.query(
+        'subjects',
+        where: 'repository_id = ?',
+        whereArgs: [repositoryId],
       );
+      if (existing.isNotEmpty) {
+        final subjectId = existing.first['id'] as int;
+        await updateSubjectFromJson(subjectId, jsonString);
+        return;
+      }
+    }
+
+    final subjectImport = SubjectImport.fromJson(jsonDecode(jsonString));
+
+    await db.transaction((txn) async {
+      final subjectId = await txn.insert('subjects', {
+        'name': subjectImport.name,
+        'author': subjectImport.author,
+        'version': subjectImport.version,
+        'repository_id': repositoryId,
+      });
 
       for (final moduleImport in subjectImport.modules) {
-        final newModuleId = await _studyDao.insertModule(
-          ModulesCompanion.insert(
-            subjectId: newSubjectId,
-            title: moduleImport.title,
-            shortDescription: moduleImport.shortDescription,
-          ),
-        );
-
-        final submodules = moduleImport.submodules
-            .map(
-              (s) => SubmodulesCompanion.insert(
-                moduleId: newModuleId,
-                title: s.title,
-                contentMd: s.contentMd,
-              ),
-            )
-            .toList();
-
-        // Batch insert submodules
-        await _studyDao.batch((batch) {
-          batch.insertAll(_studyDao.submodules, submodules);
+        final moduleId = await txn.insert('modules', {
+          'subject_id': subjectId,
+          'title': moduleImport.title,
+          'short_description': moduleImport.shortDescription,
         });
+
+        for (final submoduleImport in moduleImport.submodules) {
+          await txn.insert('submodules', {
+            'module_id': moduleId,
+            'title': submoduleImport.title,
+            'content_md': submoduleImport.contentMd,
+          });
+        }
       }
     });
+
+    _refreshSubjects();
   }
-
-  @override
-  Future<void> deleteSubject(int subjectId) =>
-      _studyDao.deleteSubjectById(subjectId);
-
-  @override
-  Future<void> deleteTestAttempt(int attemptId) =>
-      _studyDao.deleteTestAttemptById(attemptId);
 
   @override
   Future<void> updateSubjectFromJson(int subjectId, String jsonString) async {
-    return _studyDao.transaction(() async {
-      final subjectImport = SubjectImport.fromJson(jsonDecode(jsonString));
+    final db = await _dbHelper.database;
+    final subjectImport = SubjectImport.fromJson(jsonDecode(jsonString));
 
-      await _studyDao.updateSubject(
-        SubjectsCompanion(
-          id: Value(subjectId),
-          name: Value(subjectImport.name),
-          author: Value(subjectImport.author),
-          version: Value(subjectImport.version),
-        ),
+    await db.transaction((txn) async {
+      await txn.update(
+        'subjects',
+        {
+          'name': subjectImport.name,
+          'author': subjectImport.author,
+          'version': subjectImport.version,
+        },
+        where: 'id = ?',
+        whereArgs: [subjectId],
       );
 
-      final newModules = subjectImport.modules;
-      final oldModules = await _studyDao.getModulesForSubject(subjectId).first;
-
-      final newModulesMap = {for (var m in newModules) m.title: m};
-      final oldModulesMap = {for (var m in oldModules) m.title: m};
-
-      // 5. Iterate NEW modules
-      for (final newModule in newModules) {
-        final oldModule = oldModulesMap[newModule.title];
-
-        if (oldModule == null) {
-          // Insert new module
-          print("RepoUpdate: Insertando nuevo módulo: ${newModule.title}");
-          final newModuleId = await _studyDao.insertModule(
-            ModulesCompanion.insert(
-              subjectId: subjectId,
-              title: newModule.title,
-              shortDescription: newModule.shortDescription,
-            ),
-          );
-
-          final newSubmodules = newModule.submodules
-              .map(
-                (s) => SubmodulesCompanion.insert(
-                  moduleId: newModuleId,
-                  title: s.title,
-                  contentMd: s.contentMd,
-                ),
-              )
-              .toList();
-
-          await _studyDao.batch(
-            (batch) => batch.insertAll(_studyDao.submodules, newSubmodules),
-          );
-        } else {
-          // Update existing module
-          print(
-            "RepoUpdate: Actualizando módulo existente: ${newModule.title}",
-          );
-          final moduleId = oldModule.id;
-
-          await _studyDao.updateModule(
-            oldModule
-                .toCompanion(true)
-                .copyWith(shortDescription: Value(newModule.shortDescription)),
-          );
-
-          bool contentChanged = false;
-          final newSubmodules = newModule.submodules;
-          final oldSubmodules = await _studyDao
-              .getSubmodulesForModule(moduleId)
-              .first;
-
-          final newSubmodulesMap = {for (var s in newSubmodules) s.title: s};
-          final oldSubmodulesMap = {for (var s in oldSubmodules) s.title: s};
-
-          // B.1 Iterate new submodules
-          for (final newSub in newSubmodules) {
-            final oldSub = oldSubmodulesMap[newSub.title];
-            if (oldSub == null) {
-              print(" -> Insertando submódulo: ${newSub.title}");
-              await _studyDao.insertSubmodule(
-                SubmodulesCompanion.insert(
-                  moduleId: moduleId,
-                  title: newSub.title,
-                  contentMd: newSub.contentMd,
-                ),
-              );
-              contentChanged = true;
-            } else {
-              if (oldSub.contentMd != newSub.contentMd) {
-                print(" -> Actualizando submódulo: ${newSub.title}");
-                await _studyDao.updateSubmodule(
-                  oldSub
-                      .toCompanion(true)
-                      .copyWith(contentMd: Value(newSub.contentMd)),
-                );
-                contentChanged = true;
-              }
-            }
-          }
-
-          // B.2 Iterate old submodules (Delete)
-          for (final oldSub in oldSubmodules) {
-            if (!newSubmodulesMap.containsKey(oldSub.title)) {
-              print(" -> Borrando submódulo: ${oldSub.title}");
-              await _studyDao.deleteSubmoduleById(oldSub.id);
-              contentChanged = true;
-            }
-          }
-
-          // B.3 Clear questions if content changed
-          if (contentChanged) {
-            print(
-              "El contenido del módulo ${oldModule.title} cambió. Borrando preguntas viejas e intentos PENDIENTES.",
-            );
-            await _studyDao.deleteQuestionsForModule(moduleId);
-            await _studyDao.deletePendingAttemptsForModule(moduleId);
-          }
-        }
-      }
-
-      // 6. Iterate OLD modules (Delete)
-      for (final oldModule in oldModules) {
-        if (!newModulesMap.containsKey(oldModule.title)) {
-          print("RepoUpdate: Borrando módulo obsoleto: ${oldModule.title}");
-          await _studyDao.deleteModuleById(oldModule.id);
-        }
-      }
-
-      print(
-        "RepoUpdate: ¡Actualización de materia (ID: $subjectId) completada!",
+      await txn.delete(
+        'modules',
+        where: 'subject_id = ?',
+        whereArgs: [subjectId],
       );
+
+      for (final moduleImport in subjectImport.modules) {
+        final moduleId = await txn.insert('modules', {
+          'subject_id': subjectId,
+          'title': moduleImport.title,
+          'short_description': moduleImport.shortDescription,
+        });
+
+        for (final submoduleImport in moduleImport.submodules) {
+          await txn.insert('submodules', {
+            'module_id': moduleId,
+            'title': submoduleImport.title,
+            'content_md': submoduleImport.contentMd,
+          });
+        }
+      }
     });
+    _refreshSubjects();
+  }
+
+  @override
+  Future<void> checkForUpdates() async {
+    final db = await _dbHelper.database;
+    final maps = await db.query('subjects');
+    final subjects = maps.map((e) => Subject.fromMap(e)).toList();
+
+    for (final subject in subjects) {
+      if (subject.repositoryId != null) {
+        try {
+          final remoteData = await _repositoryApiService.downloadRepository(
+            subject.repositoryId!,
+          );
+          final remoteVersion = remoteData['version'] as String;
+
+          if (_isNewerVersion(subject.version, remoteVersion)) {
+            await updateSubjectFromJson(subject.id!, jsonEncode(remoteData));
+          }
+        } catch (e) {
+          print("Error checking updates: $e");
+        }
+      }
+    }
+  }
+
+  bool _isNewerVersion(String local, String remote) {
+    return remote.compareTo(local) > 0;
+  }
+
+  @override
+  Future<void> deleteSubject(int subjectId) async {
+    final db = await _dbHelper.database;
+    await db.delete('subjects', where: 'id = ?', whereArgs: [subjectId]);
+    _refreshSubjects();
+  }
+
+  @override
+  Future<Module?> getModuleById(int moduleId) async {
+    final db = await _dbHelper.database;
+    final maps = await db.query(
+      'modules',
+      where: 'id = ?',
+      whereArgs: [moduleId],
+    );
+    if (maps.isNotEmpty) return Module.fromMap(maps.first);
+    return null;
   }
 }
