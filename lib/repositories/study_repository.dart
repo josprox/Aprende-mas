@@ -233,9 +233,26 @@ class StudyRepository implements IStudyRepository {
     return null;
   }
 
-  @override
-  Stream<List<TestAttemptWithModule>> getCompletedTests() =>
-      _completedTestsController.stream;
+  Stream<List<TestAttemptWithModule>> getCompletedTests() async* {
+    final db = await _dbHelper.database;
+    final results = await db.rawQuery('''
+      SELECT t.*, m.title as module_title 
+      FROM test_attempts t
+      INNER JOIN modules m ON t.module_id = m.id
+      WHERE t.status = 'COMPLETED'
+      ORDER BY t.timestamp DESC
+    ''');
+
+    yield results.map((e) {
+      final attempt = TestAttempt.fromMap(e);
+      return TestAttemptWithModule(
+        attempt: attempt,
+        moduleTitle: e['module_title'] as String,
+      );
+    }).toList();
+
+    yield* _completedTestsController.stream;
+  }
 
   @override
   Stream<List<TestAttemptWithModule>> getPendingTests() async* {

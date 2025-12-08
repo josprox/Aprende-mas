@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:aprende_mas/repositories/i_study_repository.dart';
 import 'package:aprende_mas/models/subject_models.dart';
 import 'package:aprende_mas/viewmodels/providers.dart';
-import 'package:async/async.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class TestUiState {
@@ -54,20 +54,41 @@ class TestViewModel extends StateNotifier<AsyncValue<TestUiState>> {
   }
 
   void _init() {
-    // Combine streams manually to update state
-    // We listen to both streams and merge the latest values
+    // Listen to streams independently to handle updates from either source
     final pendingStream = _repository.getPendingTests();
     final completedStream = _repository.getCompletedTests();
 
-    StreamZip([pendingStream, completedStream]).listen(
-      (results) {
-        if (!mounted) return;
+    List<TestAttemptWithModule> lastPending = [];
+    List<TestAttemptWithModule> lastCompleted = [];
+    bool pendingLoaded = false;
+    bool completedLoaded = false;
+
+    void updateState() {
+      if (pendingLoaded && completedLoaded) {
         state = AsyncValue.data(
-          TestUiState(pendingTests: results[0], completedTests: results[1]),
+          TestUiState(pendingTests: lastPending, completedTests: lastCompleted),
         );
+      }
+    }
+
+    _pendingSubscription = pendingStream.listen(
+      (results) {
+        lastPending = results;
+        pendingLoaded = true;
+        updateState();
       },
       onError: (err, stack) {
-        if (!mounted) return;
+        state = AsyncValue.error(err, stack);
+      },
+    );
+
+    _completedSubscription = completedStream.listen(
+      (results) {
+        lastCompleted = results;
+        completedLoaded = true;
+        updateState();
+      },
+      onError: (err, stack) {
         state = AsyncValue.error(err, stack);
       },
     );
