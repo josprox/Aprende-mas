@@ -3,8 +3,7 @@ import 'package:aprende_mas/views/settings/settings_screen.dart';
 import 'package:aprende_mas/views/subject_list_screen.dart';
 import 'package:aprende_mas/views/test_list_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:google_nav_bar/google_nav_bar.dart';
-import 'package:line_icons/line_icons.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -32,6 +31,8 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       body: PageView(
         controller: _pageController,
@@ -42,38 +43,46 @@ class _MainScreenState extends State<MainScreen> {
         },
         children: _screens,
       ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 8),
-          child: GNav(
-            rippleColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-            hoverColor: Theme.of(context).colorScheme.surfaceContainer,
-            gap: 8,
-            activeColor: Theme.of(context).colorScheme.primary,
-            iconSize: 24,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            duration: const Duration(milliseconds: 400),
-            tabBackgroundColor: Theme.of(context).colorScheme.primaryContainer,
-            color: Theme.of(context).iconTheme.color,
-            tabs: const [
-              GButton(icon: LineIcons.book, text: 'Aprende'),
-              GButton(icon: LineIcons.graduationCap, text: 'Test'),
-              GButton(icon: LineIcons.checkCircle, text: 'Notas'),
-              GButton(icon: LineIcons.cog, text: 'Ajustes'),
-            ],
-            selectedIndex: _currentIndex,
-            onTabChange: (index) {
-              setState(() {
-                _currentIndex = index;
-              });
-              _pageController.animateToPage(
-                index,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOutQuad,
-              );
-            },
-          ),
+      bottomNavigationBar: DecoratedBox(
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainer.withValues(alpha: 0.94),
+          border: Border(top: BorderSide(color: scheme.outlineVariant)),
         ),
+        child: NavigationBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+            _pageController.animateToPage(
+              index,
+              duration: const Duration(milliseconds: 420),
+              curve: Curves.easeOutCubic,
+            );
+          },
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.auto_stories_outlined),
+              selectedIcon: Icon(Icons.auto_stories),
+              label: 'Aprende',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.quiz_outlined),
+              selectedIcon: Icon(Icons.quiz),
+              label: 'Tests',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.insights_outlined),
+              selectedIcon: Icon(Icons.insights),
+              label: 'Notas',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.tune_outlined),
+              selectedIcon: Icon(Icons.tune),
+              label: 'Ajustes',
+            ),
+          ],
+        ).animate().fadeIn(duration: 250.ms).slideY(begin: 0.12, end: 0),
       ),
     );
   }

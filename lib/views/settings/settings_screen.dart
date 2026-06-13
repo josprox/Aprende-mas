@@ -1,6 +1,7 @@
 import 'package:aprende_mas/views/settings/backup_restore_screen.dart';
 import 'package:aprende_mas/views/settings/legal_info_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -8,80 +9,55 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "Ajustes de la Aplicación",
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const SizedBox(height: 8),
-          _SettingsGroupCard(
-            title: "Gestión de Datos",
-            children: [
-              _SettingsItem(
-                headline: "Copia de Seguridad y Restauración",
-                supportingText:
-                    "Exporta o importa todos tus datos de estudio y progreso.",
-                icon: Icons.save,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const BackupRestoreScreen(),
+      body: CustomScrollView(
+        slivers: [
+          const SliverAppBar.large(title: Text("Ajustes")),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                _SettingsGroupCard(
+                  title: "Datos",
+                  children: [
+                    _SettingsItem(
+                      headline: "Copia de seguridad",
+                      supportingText:
+                          "Exporta o restaura materias, tests y progreso.",
+                      icon: Icons.cloud_sync_rounded,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const BackupRestoreScreen(),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
-            ],
+                  ],
+                ),
+                const SizedBox(height: 18),
+                _SettingsGroupCard(
+                  title: "Aplicación",
+                  children: [
+                    _SettingsItem(
+                      headline: "Información y legal",
+                      supportingText:
+                          "Versión, privacidad, términos y soporte.",
+                      icon: Icons.verified_user_rounded,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LegalInfoScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ]),
+            ),
           ),
-          const SizedBox(height: 24),
-          _SettingsGroupCard(
-            title: "Información y Legal",
-            children: [
-              _SettingsItem(
-                headline: "Acerca de la Aplicación",
-                supportingText:
-                    "Detalles de la versión y reconocimiento a desarrolladores.",
-                icon: Icons.info,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const LegalInfoScreen(),
-                    ),
-                  );
-                },
-              ),
-              Divider(
-                height: 1,
-                indent: 56,
-                color: Theme.of(
-                  context,
-                ).colorScheme.outlineVariant.withOpacity(0.5),
-              ),
-              _SettingsItem(
-                headline: "Información Legal",
-                supportingText:
-                    "Política de privacidad y términos de servicio.",
-                icon: Icons.lock,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const LegalInfoScreen(),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
         ],
       ),
     );
@@ -100,25 +76,18 @@ class _SettingsGroupCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(bottom: 8, left: 4),
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
             title,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w900,
               color: Theme.of(context).colorScheme.primary,
             ),
           ),
         ),
-        Card(
-          elevation: 2,
-          color: Theme.of(context).colorScheme.surfaceContainerHigh,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(children: children),
-        ),
+        Card(child: Column(children: children)),
       ],
-    );
+    ).animate().fadeIn(duration: 240.ms).slideY(begin: 0.04, end: 0);
   }
 }
 
@@ -137,20 +106,26 @@ class _SettingsItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
       title: Text(
         headline,
-        style: const TextStyle(fontWeight: FontWeight.w500),
+        style: const TextStyle(fontWeight: FontWeight.w800),
       ),
       subtitle: Text(supportingText),
-      leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
-      trailing: Icon(
-        Icons.arrow_forward_ios,
-        size: 16,
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      leading: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: scheme.primaryContainer,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Icon(icon, color: scheme.onPrimaryContainer),
       ),
+      trailing: Icon(Icons.chevron_right_rounded, color: scheme.primary),
       onTap: onTap,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     );
   }
 }

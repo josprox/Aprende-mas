@@ -1,10 +1,9 @@
 import 'package:aprende_mas/models/subject_models.dart';
-
 import 'package:aprende_mas/viewmodels/subject_viewmodel.dart';
 import 'package:aprende_mas/views/module_list_screen.dart';
-import 'package:aprende_mas/widgets/subject_card.dart';
 import 'package:aprende_mas/views/repository_store_screen.dart';
-
+import 'package:aprende_mas/widgets/app_empty_state.dart';
+import 'package:aprende_mas/widgets/subject_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -15,14 +14,14 @@ class SubjectListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(subjectNotifierProvider);
     final notifier = ref.read(subjectNotifierProvider.notifier);
+    final scheme = Theme.of(context).colorScheme;
 
-    // Show snackbar for messages
     ref.listen(subjectNotifierProvider, (previous, next) {
       if (next.errorMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.errorMessage!),
-            backgroundColor: Theme.of(context).colorScheme.error,
+            backgroundColor: scheme.error,
           ),
         );
         notifier.clearMessages();
@@ -40,18 +39,10 @@ class SubjectListScreen extends ConsumerWidget {
         context: context,
         builder: (context) {
           return AlertDialog(
-            title: Row(
-              children: [
-                Icon(
-                  Icons.warning_amber_rounded,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-                const SizedBox(width: 8),
-                const Text("Eliminar Materia"),
-              ],
-            ),
+            icon: Icon(Icons.warning_amber_rounded, color: scheme.error),
+            title: const Text("Eliminar materia"),
             content: Text(
-              "¿Estás seguro de que deseas eliminar permanentemente \"${subject.name}\"?\n\nEsta acción no se puede deshacer y perderás todo el historial de exámenes asociado.",
+              "¿Seguro que deseas eliminar permanentemente \"${subject.name}\"?\n\nSe perderá el historial de exámenes asociado.",
             ),
             actions: [
               TextButton(
@@ -64,8 +55,8 @@ class SubjectListScreen extends ConsumerWidget {
                   Navigator.of(context).pop();
                 },
                 style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                  foregroundColor: Theme.of(context).colorScheme.onError,
+                  backgroundColor: scheme.error,
+                  foregroundColor: scheme.onError,
                 ),
                 child: const Text("Eliminar"),
               ),
@@ -78,53 +69,47 @@ class SubjectListScreen extends ConsumerWidget {
     void showOptionsSheet(Subject subject) {
       showModalBottomSheet(
         context: context,
-        showDragHandle: true, // M3 specific
         builder: (context) {
           return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24.0,
-                    vertical: 8.0,
-                  ),
-                  child: Text(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
                     subject.name,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w900,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.file_upload_outlined),
-                  title: const Text("Actualizar contenido (JSON)"),
-                  onTap: () {
-                    Navigator.pop(context); // Close sheet
-                    notifier.prepareForFileAction(FileAction.update);
-                    notifier.pickAndProcessFile();
-                  },
-                ),
-                ListTile(
-                  leading: Icon(
-                    Icons.delete_outline,
-                    color: Theme.of(context).colorScheme.error,
+                  const SizedBox(height: 12),
+                  ListTile(
+                    leading: const Icon(Icons.upload_file_rounded),
+                    title: const Text("Actualizar contenido JSON"),
+                    subtitle: const Text("Reemplaza o mejora esta materia"),
+                    onTap: () {
+                      Navigator.pop(context);
+                      notifier.prepareForFileAction(FileAction.update);
+                      notifier.pickAndProcessFile();
+                    },
                   ),
-                  title: Text(
-                    "Eliminar materia",
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
+                  ListTile(
+                    leading: Icon(
+                      Icons.delete_outline_rounded,
+                      color: scheme.error,
                     ),
+                    title: Text(
+                      "Eliminar materia",
+                      style: TextStyle(color: scheme.error),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      showDeleteConfirmationDialog(subject);
+                    },
                   ),
-                  onTap: () {
-                    Navigator.pop(context); // Close sheet
-                    showDeleteConfirmationDialog(subject);
-                  },
-                ),
-                const SizedBox(height: 16),
-              ],
+                ],
+              ),
             ),
           );
         },
@@ -137,9 +122,9 @@ class SubjectListScreen extends ConsumerWidget {
           SliverAppBar.large(
             title: const Text("Biblioteca"),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.storefront_outlined),
-                tooltip: 'Tienda de Materias',
+              IconButton.filledTonal(
+                icon: const Icon(Icons.storefront_rounded),
+                tooltip: 'Tienda de materias',
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -149,57 +134,55 @@ class SubjectListScreen extends ConsumerWidget {
                   );
                 },
               ),
+              const SizedBox(width: 12),
             ],
           ),
-          state.subjects.isEmpty
-              ? SliverFillRemaining(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.school_outlined,
-                          size: 64,
-                          color: Theme.of(context).colorScheme.surfaceVariant,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          "No hay materias",
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        const SizedBox(height: 8),
-                        const Text("Importa una para empezar a aprender."),
-                      ],
-                    ),
-                  ),
-                )
-              : SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      final subject = state.subjects[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: SubjectCard(
-                          subject: subject,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    ModuleListScreen(subjectId: subject.id!),
-                              ),
-                            );
-                          },
-                          onOptionsTap: () {
-                            notifier.onSubjectLongPress(subject);
-                            showOptionsSheet(subject);
-                          },
-                        ),
-                      );
-                    }, childCount: state.subjects.length),
-                  ),
+          if (state.subjects.isEmpty)
+            SliverFillRemaining(
+              child: AppEmptyState(
+                icon: Icons.auto_stories_rounded,
+                title: "Tu biblioteca está lista",
+                message:
+                    "Importa una materia o explora la tienda para comenzar con módulos, tests y calificaciones.",
+                action: FilledButton.icon(
+                  onPressed: () {
+                    notifier.prepareForFileAction(FileAction.import);
+                    notifier.pickAndProcessFile();
+                  },
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text("Importar materia"),
                 ),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 104),
+              sliver: SliverList.builder(
+                itemCount: state.subjects.length,
+                itemBuilder: (context, index) {
+                  final subject = state.subjects[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: SubjectCard(
+                      subject: subject,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ModuleListScreen(subjectId: subject.id!),
+                          ),
+                        );
+                      },
+                      onOptionsTap: () {
+                        notifier.onSubjectLongPress(subject);
+                        showOptionsSheet(subject);
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -207,7 +190,7 @@ class SubjectListScreen extends ConsumerWidget {
           notifier.prepareForFileAction(FileAction.import);
           notifier.pickAndProcessFile();
         },
-        icon: const Icon(Icons.add),
+        icon: const Icon(Icons.add_rounded),
         label: const Text("Importar"),
       ),
     );

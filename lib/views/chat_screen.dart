@@ -1,5 +1,6 @@
 import 'package:aprende_mas/viewmodels/module_detail_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -38,8 +39,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       moduleDetailViewModelProvider(widget.moduleId).notifier,
     );
     final chatState = state.chatUiState;
+    final scheme = Theme.of(context).colorScheme;
 
-    // Auto-scroll on new messages
     ref.listen(
       moduleDetailViewModelProvider(
         widget.moduleId,
@@ -50,45 +51,45 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        centerTitle: true,
-        title: Text(
-          "Asistente IA",
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        surfaceTintColor: Colors.transparent,
+        title: const Text("Asistente IA"),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: IconButton.filledTonal(
+              tooltip: "Asistente del módulo",
+              onPressed: null,
+              icon: Icon(Icons.auto_awesome_rounded),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
           children: [
             Expanded(
-              child: ListView.separated(
-                controller: _scrollController,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 20,
-                ),
-                itemCount:
-                    chatState.chatHistory.length +
-                    (chatState.isModelThinking &&
-                            (chatState.chatHistory.isEmpty ||
-                                !chatState.chatHistory.last.isPending)
-                        ? 1
-                        : 0),
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 16),
-                itemBuilder: (context, index) {
-                  if (index < chatState.chatHistory.length) {
-                    final message = chatState.chatHistory[index];
-                    return _MessageBubble(message: message);
-                  } else {
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: scheme.surface),
+                child: ListView.separated(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+                  itemCount:
+                      chatState.chatHistory.length +
+                      (chatState.isModelThinking &&
+                              (chatState.chatHistory.isEmpty ||
+                                  !chatState.chatHistory.last.isPending)
+                          ? 1
+                          : 0),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 14),
+                  itemBuilder: (context, index) {
+                    if (index < chatState.chatHistory.length) {
+                      final message = chatState.chatHistory[index];
+                      return _MessageBubble(message: message);
+                    }
                     return const _ThinkingIndicator();
-                  }
-                },
+                  },
+                ),
               ),
             ),
             _ChatInput(
@@ -112,55 +113,45 @@ class _MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUser = message.role == "user";
-    final colorScheme = Theme.of(context).colorScheme;
-
+    final scheme = Theme.of(context).colorScheme;
     final containerColor = isUser
-        ? colorScheme.primary
-        : colorScheme.secondaryContainer;
-    final contentColor = isUser
-        ? colorScheme.onPrimary
-        : colorScheme.onSecondaryContainer;
-
-    const borderRadius = BorderRadius.only(
-      topLeft: Radius.circular(20),
-      topRight: Radius.circular(20),
-      bottomLeft: Radius.circular(20),
-      bottomRight: Radius.circular(20),
-    );
-
-    // Expressive shapes: user bubble differs slightly from AI bubble if desired
-    // Currently using full rounded corners for a modern chat look
+        ? scheme.primary
+        : scheme.surfaceContainerHigh;
+    final contentColor = isUser ? scheme.onPrimary : scheme.onSurface;
 
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.85,
+          maxWidth: MediaQuery.of(context).size.width * 0.86,
         ),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           decoration: BoxDecoration(
             color: containerColor,
-            borderRadius: borderRadius.copyWith(
-              bottomRight: isUser ? const Radius.circular(4) : null,
-              bottomLeft: !isUser ? const Radius.circular(4) : null,
+            borderRadius: BorderRadius.only(
+              topLeft: const Radius.circular(24),
+              topRight: const Radius.circular(24),
+              bottomLeft: Radius.circular(isUser ? 24 : 6),
+              bottomRight: Radius.circular(isUser ? 6 : 24),
             ),
+            border: isUser
+                ? null
+                : Border.all(
+                    color: scheme.outlineVariant.withValues(alpha: 0.7),
+                  ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (message.isPending && message.content.isEmpty)
-                _AnimatedLoadingDots(color: contentColor)
-              else if (isUser)
-                Text(
+          child: message.isPending && message.content.isEmpty
+              ? _AnimatedLoadingDots(color: contentColor)
+              : isUser
+              ? Text(
                   message.content,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: contentColor,
                     height: 1.4,
                   ),
                 )
-              else
-                MarkdownBody(
+              : MarkdownBody(
                   data: message.content,
                   selectable: true,
                   styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
@@ -170,25 +161,23 @@ class _MessageBubble extends StatelessWidget {
                           height: 1.4,
                         ),
                         code: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          backgroundColor: colorScheme.surface,
-                          color: colorScheme.onSurface,
+                          backgroundColor: scheme.surfaceContainerHighest,
+                          color: scheme.onSurface,
                           fontFamily: 'monospace',
                         ),
                         codeblockDecoration: BoxDecoration(
-                          color: colorScheme.surface,
-                          borderRadius: BorderRadius.circular(8),
+                          color: scheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
                 ),
-            ],
-          ),
         ),
       ),
-    );
+    ).animate().fadeIn(duration: 180.ms).slideY(begin: 0.04, end: 0);
   }
 }
 
-class _ChatInput extends StatelessWidget {
+class _ChatInput extends StatefulWidget {
   final String currentInput;
   final Function(String) onInputChanged;
   final VoidCallback onSend;
@@ -202,49 +191,76 @@ class _ChatInput extends StatelessWidget {
   });
 
   @override
+  State<_ChatInput> createState() => _ChatInputState();
+}
+
+class _ChatInputState extends State<_ChatInput> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.currentInput);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ChatInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.currentInput != _controller.text) {
+      _controller.value = TextEditingValue(
+        text: widget.currentInput,
+        selection: TextSelection.collapsed(offset: widget.currentInput.length),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainer.withValues(alpha: 0.96),
+        border: Border(top: BorderSide(color: scheme.outlineVariant)),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(28),
+            child: TextField(
+              controller: _controller,
+              onChanged: widget.onInputChanged,
+              decoration: const InputDecoration(
+                hintText: "Pregunta sobre este módulo...",
+                prefixIcon: Icon(Icons.chat_bubble_outline_rounded),
               ),
-              child: TextField(
-                controller: TextEditingController(text: currentInput)
-                  ..selection = TextSelection.fromPosition(
-                    TextPosition(offset: currentInput.length),
-                  ),
-                onChanged: onInputChanged,
-                decoration: const InputDecoration(
-                  hintText: "Escribe un mensaje...",
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 14,
-                  ),
-                  isDense: true,
-                ),
-                minLines: 1,
-                maxLines: 5,
-                enabled: isEnabled,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
+              minLines: 1,
+              maxLines: 5,
+              enabled: widget.isEnabled,
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) {
+                if (widget.isEnabled && widget.currentInput.trim().isNotEmpty) {
+                  widget.onSend();
+                }
+              },
             ),
           ),
-          const SizedBox(width: 8),
-          FloatingActionButton(
-            onPressed: (isEnabled && currentInput.trim().isNotEmpty)
-                ? onSend
+          const SizedBox(width: 10),
+          FloatingActionButton.small(
+            heroTag: "send_chat",
+            onPressed:
+                (widget.isEnabled && widget.currentInput.trim().isNotEmpty)
+                ? widget.onSend
                 : null,
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Theme.of(context).colorScheme.onPrimary,
-            elevation: 0,
-            shape: const CircleBorder(),
+            backgroundColor: scheme.primary,
+            foregroundColor: scheme.onPrimary,
             child: const Icon(Icons.arrow_upward_rounded),
           ),
         ],
@@ -258,86 +274,58 @@ class _ThinkingIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(left: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.secondaryContainer,
+          color: scheme.surfaceContainerHigh,
           borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-            bottomRight: Radius.circular(20),
-            bottomLeft: Radius.circular(4),
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+            bottomLeft: Radius.circular(6),
+          ),
+          border: Border.all(
+            color: scheme.outlineVariant.withValues(alpha: 0.7),
           ),
         ),
-        child: _AnimatedLoadingDots(
-          color: Theme.of(context).colorScheme.onSecondaryContainer,
-        ),
+        child: _AnimatedLoadingDots(color: scheme.onSurfaceVariant),
       ),
     );
   }
 }
 
-class _AnimatedLoadingDots extends StatefulWidget {
+class _AnimatedLoadingDots extends StatelessWidget {
   final Color color;
+
   const _AnimatedLoadingDots({required this.color});
 
   @override
-  State<_AnimatedLoadingDots> createState() => _AnimatedLoadingDotsState();
-}
-
-class _AnimatedLoadingDotsState extends State<_AnimatedLoadingDots>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final val = _controller.value;
-        const count = 3;
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(count, (index) {
-            final offset = index / count;
-            final t = (val - offset) % 1.0;
-            final opacity = (1.0 - (t - 0.5).abs() * 2).clamp(0.2, 1.0);
-
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2.0),
-              child: Opacity(
-                opacity: opacity,
-                child: Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: widget.color,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            );
-          }),
-        );
-      },
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(
+        3,
+        (index) => Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child:
+              Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  )
+                  .animate(onPlay: (controller) => controller.repeat())
+                  .fade(begin: 0.25, end: 1, duration: 520.ms)
+                  .then(delay: (90 * index).ms)
+                  .fade(begin: 1, end: 0.25, duration: 520.ms),
+        ),
+      ),
     );
   }
 }

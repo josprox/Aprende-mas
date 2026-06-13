@@ -1,16 +1,16 @@
+import 'package:aprende_mas/theme/app_theme.dart';
 import 'package:aprende_mas/views/main_screen.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
 
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -32,36 +32,8 @@ class MyApp extends ConsumerWidget {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'Aprende Más',
-          theme: ThemeData(
-            useMaterial3: true,
-            colorScheme:
-                lightDynamic ??
-                ColorScheme.fromSeed(
-                  seedColor: Colors.indigo,
-                  brightness: Brightness.light,
-                ),
-            textTheme: GoogleFonts.outfitTextTheme(ThemeData.light().textTheme),
-            appBarTheme: const AppBarTheme(
-              centerTitle: false,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-            ),
-          ),
-          darkTheme: ThemeData(
-            useMaterial3: true,
-            colorScheme:
-                darkDynamic ??
-                ColorScheme.fromSeed(
-                  seedColor: Colors.indigo,
-                  brightness: Brightness.dark,
-                ),
-            textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme),
-            appBarTheme: const AppBarTheme(
-              centerTitle: false,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-            ),
-          ),
+          theme: AppTheme.light(lightDynamic),
+          darkTheme: AppTheme.dark(darkDynamic),
           themeMode: ThemeMode.system,
           home: const MainScreen(),
         );

@@ -2,6 +2,8 @@ import 'package:aprende_mas/models/subject_models.dart';
 import 'package:aprende_mas/viewmodels/test_viewmodel.dart';
 import 'package:aprende_mas/views/quiz_screen.dart';
 import 'package:aprende_mas/views/test_review_screen.dart';
+import 'package:aprende_mas/widgets/app_empty_state.dart';
+import 'package:aprende_mas/widgets/app_section_header.dart';
 import 'package:aprende_mas/widgets/test_item_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,20 +16,13 @@ class TestListScreen extends ConsumerWidget {
     WidgetRef ref,
     TestAttemptWithModule test,
   ) {
+    final scheme = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Row(
-            children: [
-              Icon(
-                Icons.delete_outline_rounded,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              const SizedBox(width: 8),
-              const Text("Eliminar Intento"),
-            ],
-          ),
+          icon: Icon(Icons.delete_outline_rounded, color: scheme.error),
+          title: const Text("Eliminar intento"),
           content: Text(
             "¿Quieres eliminar este examen de \"${test.moduleTitle}\"?\n\nEsta acción no se puede deshacer.",
           ),
@@ -44,8 +39,8 @@ class TestListScreen extends ConsumerWidget {
                 Navigator.of(context).pop();
               },
               style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.error,
-                foregroundColor: Theme.of(context).colorScheme.onError,
+                backgroundColor: scheme.error,
+                foregroundColor: scheme.onError,
               ),
               child: const Text("Eliminar"),
             ),
@@ -61,146 +56,118 @@ class TestListScreen extends ConsumerWidget {
 
     return Scaffold(
       body: stateAsync.when(
-        data: (state) => CustomScrollView(
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  const SizedBox(height: 16),
-                  Text(
-                    "Tu Historial de Exámenes",
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
+        data: (state) {
+          final isEmpty =
+              state.pendingTests.isEmpty && state.completedTests.isEmpty;
+
+          return CustomScrollView(
+            slivers: [
+              const SliverAppBar.large(title: Text("Tests")),
+              if (isEmpty)
+                const SliverFillRemaining(
+                  child: AppEmptyState(
+                    icon: Icons.quiz_rounded,
+                    title: "Aún no hay tests",
+                    message:
+                        "Inicia un test desde cualquier módulo y aquí aparecerá tu progreso.",
+                  ),
+                )
+              else ...[
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  sliver: SliverToBoxAdapter(
+                    child: AppSectionHeader(
+                      icon: Icons.pending_actions_rounded,
+                      title: "En progreso",
+                      trailing: "${state.pendingTests.length}",
                     ),
-                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 24),
-                  // ... (Headers code remains the same, assuming it's above/below efficiently)
-                  // For simplicity in this edit, I will replace the headers + lists blocks
-                  // actually, to be precise, I should target specific blocks or use multi-replace if headers are scattered.
-                  // But here I'm replacing the body mainly to insert the dialog method (which should be outside build ideally or inside a mixin/class method)
-                  // Wait, I can't put method inside build easily if I want it to be clean.
-                  // I'll make TestListScreen a plain ConsumerWidget and put the helper method inside the class.
-
-                  // Pending Tests Header
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.assignment,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        "En Progreso",
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                ]),
-              ),
-            ),
-
-            // Pending Tests List
-            if (state.pendingTests.isEmpty)
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  child: Text("🎉 ¡Perfecto! No tienes exámenes pendientes."),
                 ),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                    final test = state.pendingTests[index];
-                    return TestItemCard(
-                      test: test,
-                      isPending: true,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => QuizScreen(
-                              moduleId: test.attempt.moduleId,
-                              attemptId: test.attempt.id!,
-                            ),
-                          ),
+                if (state.pendingTests.isEmpty)
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 8, 16, 24),
+                      child: Text(
+                        "Todo al día. No tienes exámenes pendientes.",
+                      ),
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverList.builder(
+                      itemCount: state.pendingTests.length,
+                      itemBuilder: (context, index) {
+                        final test = state.pendingTests[index];
+                        return TestItemCard(
+                          test: test,
+                          isPending: true,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => QuizScreen(
+                                  moduleId: test.attempt.moduleId,
+                                  attemptId: test.attempt.id!,
+                                ),
+                              ),
+                            );
+                          },
+                          onLongPress: () =>
+                              _showDeleteConfirmation(context, ref, test),
                         );
                       },
-                      onLongPress: () =>
-                          _showDeleteConfirmation(context, ref, test),
-                    );
-                  }, childCount: state.pendingTests.length),
-                ),
-              ),
-
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  const SizedBox(height: 24),
-                  // Completed Tests Header
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.done_all,
-                        color: Theme.of(context).colorScheme.tertiary,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        "Completados para Revisión",
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                ]),
-              ),
-            ),
-
-            // Completed Tests List
-            if (state.completedTests.isEmpty)
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  child: Text("Empieza un test para ver tu primer resultado."),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+                  sliver: SliverToBoxAdapter(
+                    child: AppSectionHeader(
+                      icon: Icons.task_alt_rounded,
+                      title: "Completados",
+                      trailing: "${state.completedTests.length}",
+                    ),
+                  ),
                 ),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                    final test = state.completedTests[index];
-                    return TestItemCard(
-                      test: test,
-                      isPending: false,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                TestReviewScreen(attemptId: test.attempt.id!),
-                          ),
+                if (state.completedTests.isEmpty)
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 8, 16, 24),
+                      child: Text(
+                        "Completa un test para revisar tus respuestas.",
+                      ),
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                    sliver: SliverList.builder(
+                      itemCount: state.completedTests.length,
+                      itemBuilder: (context, index) {
+                        final test = state.completedTests[index];
+                        return TestItemCard(
+                          test: test,
+                          isPending: false,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => TestReviewScreen(
+                                  attemptId: test.attempt.id!,
+                                ),
+                              ),
+                            );
+                          },
+                          onLongPress: () =>
+                              _showDeleteConfirmation(context, ref, test),
                         );
                       },
-                      onLongPress: () =>
-                          _showDeleteConfirmation(context, ref, test),
-                    );
-                  }, childCount: state.completedTests.length),
-                ),
-              ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 32)),
-          ],
-        ),
+                    ),
+                  ),
+              ],
+            ],
+          );
+        },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text("Error: $err")),
       ),

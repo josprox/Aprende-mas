@@ -2,7 +2,9 @@ import 'package:aprende_mas/models/subject_models.dart';
 import 'package:aprende_mas/viewmodels/providers.dart';
 import 'package:aprende_mas/views/chat_screen.dart';
 import 'package:aprende_mas/views/quiz_screen.dart';
+import 'package:aprende_mas/widgets/app_empty_state.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -16,25 +18,11 @@ class ModuleDetailScreen extends ConsumerWidget {
     final repository = ref.watch(studyRepositoryProvider);
     final submodulesStream = repository.getSubmodulesForModule(moduleId);
     final moduleFuture = repository.getModuleById(moduleId);
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: FutureBuilder<Module?>(
-          future: moduleFuture,
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              return Text(
-                snapshot.data?.title ?? "Detalle del Módulo",
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              );
-            }
-            return const Text("Cargando...");
-          },
-        ),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-      ),
-      floatingActionButton: Row(
-        mainAxisSize: MainAxisSize.min,
+      floatingActionButton: Wrap(
+        spacing: 10,
         children: [
           FloatingActionButton.extended(
             heroTag: "chat_fab",
@@ -46,12 +34,11 @@ class ModuleDetailScreen extends ConsumerWidget {
                 ),
               );
             },
-            icon: const Icon(Icons.question_answer),
-            label: const Text("Preguntar IA"),
-            backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-            foregroundColor: Theme.of(context).colorScheme.onSecondaryContainer,
+            icon: const Icon(Icons.auto_awesome_rounded),
+            label: const Text("IA"),
+            backgroundColor: scheme.secondaryContainer,
+            foregroundColor: scheme.onSecondaryContainer,
           ),
-          const SizedBox(width: 8),
           FloatingActionButton.extended(
             heroTag: "quiz_fab",
             onPressed: () {
@@ -63,58 +50,146 @@ class ModuleDetailScreen extends ConsumerWidget {
                 ),
               );
             },
-            icon: const Icon(Icons.play_arrow),
-            label: const Text("Iniciar Test"),
-            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-            foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+            icon: const Icon(Icons.play_arrow_rounded),
+            label: const Text("Test"),
           ),
         ],
       ),
       body: StreamBuilder<List<Submodule>>(
         stream: submodulesStream,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          }
-
-          final submodules = snapshot.data ?? [];
-
-          return ListView.builder(
-            padding: const EdgeInsets.only(bottom: 96),
-            itemCount: submodules.length,
-            itemBuilder: (context, index) {
-              final submodule = submodules[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+          return CustomScrollView(
+            slivers: [
+              SliverAppBar.large(
+                title: FutureBuilder<Module?>(
+                  future: moduleFuture,
+                  builder: (context, snapshot) {
+                    return Text(snapshot.data?.title ?? "Detalle del módulo");
+                  },
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      submodule.title,
-                      style: Theme.of(context).textTheme.headlineMedium
-                          ?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                    ),
-                    const SizedBox(height: 12),
-                    MarkdownBody(
-                      data: submodule.contentMd,
-                      selectable: true,
-                      styleSheet: MarkdownStyleSheet.fromTheme(
-                        Theme.of(context),
-                      ),
-                    ),
-                    const Divider(height: 32),
-                  ],
+              ),
+              if (snapshot.connectionState == ConnectionState.waiting)
+                const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (snapshot.hasError)
+                SliverFillRemaining(
+                  child: AppEmptyState(
+                    icon: Icons.error_outline_rounded,
+                    title: "No se pudo abrir",
+                    message: "Error: ${snapshot.error}",
+                  ),
+                )
+              else if ((snapshot.data ?? []).isEmpty)
+                const SliverFillRemaining(
+                  child: AppEmptyState(
+                    icon: Icons.article_outlined,
+                    title: "Sin contenido",
+                    message: "Este módulo no tiene subtemas disponibles.",
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 112),
+                  sliver: SliverList.builder(
+                    itemCount: snapshot.data!.length,
+                    itemBuilder: (context, index) {
+                      final submodule = snapshot.data![index];
+                      return Card(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            color: scheme.surfaceContainerLow,
+                            child: Padding(
+                              padding: const EdgeInsets.all(18),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: scheme.primaryContainer,
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.notes_rounded,
+                                          color: scheme.onPrimaryContainer,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          submodule.title,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headlineSmall
+                                              ?.copyWith(
+                                                color: scheme.onSurface,
+                                                fontWeight: FontWeight.w900,
+                                                height: 1.08,
+                                              ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  MarkdownBody(
+                                    data: submodule.contentMd,
+                                    selectable: true,
+                                    styleSheet:
+                                        MarkdownStyleSheet.fromTheme(
+                                          Theme.of(context),
+                                        ).copyWith(
+                                          p: Theme.of(context)
+                                              .textTheme
+                                              .bodyLarge
+                                              ?.copyWith(height: 1.45),
+                                          h1: Theme.of(context)
+                                              .textTheme
+                                              .headlineMedium
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                          h2: Theme.of(context)
+                                              .textTheme
+                                              .headlineSmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                          blockquoteDecoration: BoxDecoration(
+                                            color: scheme.secondaryContainer,
+                                            borderRadius: BorderRadius.circular(
+                                              18,
+                                            ),
+                                          ),
+                                          codeblockDecoration: BoxDecoration(
+                                            color:
+                                                scheme.surfaceContainerHighest,
+                                            borderRadius: BorderRadius.circular(
+                                              18,
+                                            ),
+                                          ),
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                          .animate(delay: (45 * index).ms)
+                          .fadeIn()
+                          .slideY(
+                            begin: 0.04,
+                            end: 0,
+                            curve: Curves.easeOutCubic,
+                          );
+                    },
+                  ),
                 ),
-              );
-            },
+            ],
           );
         },
       ),

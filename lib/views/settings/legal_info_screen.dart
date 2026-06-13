@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class LegalInfoScreen extends StatelessWidget {
@@ -8,99 +9,78 @@ class LegalInfoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Información Legal"),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      appBar: AppBar(title: const Text("Información legal")),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
-          Text(
-            "Acuerdos y Políticas",
-            style: Theme.of(
-              context,
-            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
           const _LegalSection(
-            title: "Términos y Condiciones de Uso (T&C)",
+            icon: Icons.gavel_rounded,
+            title: "Términos y condiciones",
             children: [
               Text(
-                "Al usar esta aplicación, usted acepta los siguientes términos: La aplicación es proporcionada 'tal cual' sin garantías. El desarrollador no se hace responsable por la pérdida de datos o daños derivados de su uso. El contenido está protegido por derechos de autor.",
+                "Al usar esta aplicación aceptas que se proporciona tal cual, sin garantías. El desarrollador no se hace responsable por pérdida de datos o daños derivados de su uso. El contenido está protegido por derechos de autor.",
               ),
             ],
           ),
           _LegalSection(
-            title: "Licencia de Código Fuente (Source-Available)",
+            icon: Icons.code_rounded,
+            title: "Licencia de código fuente",
             children: [
               const Text(
-                "El código fuente de esta aplicación está disponible para su consulta y auditoría pública. Sin embargo, este software NO es de código abierto (Open Source).",
-                style: TextStyle(fontWeight: FontWeight.bold),
+                "El código fuente está disponible para consulta y auditoría pública, pero este software no es de código abierto.",
+                style: TextStyle(fontWeight: FontWeight.w700),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               const Text(
-                "Derechos del Usuario:",
-                style: TextStyle(fontWeight: FontWeight.w600),
+                "Puedes consultar y aportar mediante pull requests o reportes.",
               ),
-              const Text(
-                "Usted tiene derecho a **consultar** y **aportar** (mediante pull requests o reportes) al código fuente.",
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                "Restricciones:",
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
+              const SizedBox(height: 8),
               Text(
-                "Está estrictamente prohibido modificar, distribuir, republicar, sublicenciar o utilizar el código para fines comerciales o derivados sin el permiso explícito y escrito del desarrollador.",
+                "Está prohibido modificar, distribuir, republicar, sublicenciar o usar el código con fines comerciales o derivados sin permiso explícito y escrito del desarrollador.",
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ],
           ),
           const _LegalSection(
-            title: "Política de Privacidad",
+            icon: Icons.privacy_tip_rounded,
+            title: "Política de privacidad",
             children: [
               Text(
-                "Esta aplicación está diseñada para ser privada y no recopila información personal identificable. Los datos (materias, notas) se almacenan localmente en su dispositivo y nunca se transmiten a servidores externos sin su consentimiento explícito (como al crear un backup local).",
+                "La aplicación está diseñada para ser privada. Los datos de materias, notas y progreso se almacenan localmente en tu dispositivo y no se transmiten a servidores externos sin tu consentimiento explícito.",
               ),
             ],
           ),
           const _LegalSection(
-            title: "Componentes de Terceros (Código Abierto)",
+            icon: Icons.extension_rounded,
+            title: "Componentes de terceros",
             children: [
               Text(
-                "Esta aplicación utiliza bibliotecas de terceros que sí están licenciadas bajo licencias de Código Abierto (Open Source), incluyendo Flutter, Riverpod, Drift, etc. Se respetan todas las obligaciones de licencia de estos componentes.",
+                "Esta aplicación utiliza bibliotecas de terceros licenciadas como código abierto, incluyendo Flutter, Riverpod y otros componentes compatibles.",
               ),
             ],
           ),
           _LegalSection(
-            title: "Soporte y Autoría",
+            icon: Icons.support_agent_rounded,
+            title: "Soporte y autoría",
             children: [
-              const Text("Aplicación creada por:"),
               Text(
                 "Melchor Estrada José Luis - JOSPROX MX",
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w900,
                   color: Theme.of(context).colorScheme.primary,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                "Para soporte, reportes de errores, dudas o cualquier otra consulta, por favor utilice el siguiente enlace:",
-              ),
-              const SizedBox(height: 4),
               RichText(
                 text: TextSpan(
                   style: Theme.of(context).textTheme.bodyMedium,
                   children: [
-                    const TextSpan(text: "Enlace de Soporte: "),
+                    const TextSpan(text: "Soporte: "),
                     TextSpan(
                       text: "josprox.com/soporte/",
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w900,
                       ),
                       recognizer: TapGestureRecognizer()
                         ..onTap = () async {
@@ -115,12 +95,13 @@ class LegalInfoScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Center(
             child: Text(
               "JOSPROX MX",
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ),
@@ -131,28 +112,54 @@ class LegalInfoScreen extends StatelessWidget {
 }
 
 class _LegalSection extends StatelessWidget {
+  final IconData icon;
   final String title;
   final List<Widget> children;
 
-  const _LegalSection({required this.title, required this.children});
+  const _LegalSection({
+    required this.icon,
+    required this.title,
+    required this.children,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          ...children,
-        ],
+    final scheme = Theme.of(context).colorScheme;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 14),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: scheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(icon, color: scheme.onSecondaryContainer),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...children,
+          ],
+        ),
       ),
-    );
+    ).animate().fadeIn(duration: 220.ms).slideY(begin: 0.04, end: 0);
   }
 }

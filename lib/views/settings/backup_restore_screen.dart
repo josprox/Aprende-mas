@@ -1,5 +1,6 @@
 import 'package:aprende_mas/viewmodels/backup_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class BackupRestoreScreen extends ConsumerWidget {
@@ -9,8 +10,8 @@ class BackupRestoreScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(backupViewModelProvider);
     final notifier = ref.read(backupViewModelProvider.notifier);
+    final scheme = Theme.of(context).colorScheme;
 
-    // Listen for messages
     ref.listen(backupViewModelProvider, (prev, next) {
       if (next.message != null) {
         ScaffoldMessenger.of(
@@ -21,18 +22,12 @@ class BackupRestoreScreen extends ConsumerWidget {
     });
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Copia de Seguridad y Restauración"),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      appBar: AppBar(title: const Text("Copia de seguridad")),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           if (state.isLoading) ...[
-            const SizedBox(height: 32),
+            const SizedBox(height: 48),
             const Center(child: CircularProgressIndicator()),
             const SizedBox(height: 16),
             Text(
@@ -41,47 +36,45 @@ class BackupRestoreScreen extends ConsumerWidget {
               style: Theme.of(context).textTheme.titleMedium,
             ),
           ] else if (state.isError) ...[
-            const SizedBox(height: 16),
             Card(
-              color: Theme.of(context).colorScheme.errorContainer,
+              color: scheme.errorContainer,
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
+                padding: const EdgeInsets.all(18),
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "❌ Error",
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                    Icon(Icons.error_rounded, color: scheme.onErrorContainer),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        state.message ?? "Ocurrió un error inesperado.",
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: scheme.onErrorContainer,
+                          height: 1.35,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      state.message ?? "Ocurrió un error inesperado.",
-                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
                 ),
               ),
             ),
           ] else ...[
-            const SizedBox(height: 32),
             _ActionCard(
-              title: "Crear Copia de Seguridad",
+              title: "Crear respaldo",
               description:
-                  "Guarda todos tus datos de la aplicación (materias, exámenes, progreso) en un archivo local.",
-              buttonText: "Guardar Backup",
-              icon: Icons.save,
+                  "Guarda materias, exámenes y progreso en un archivo local.",
+              buttonText: "Guardar backup",
+              icon: Icons.save_alt_rounded,
               enabled: !state.isLoading,
               onTap: () => notifier.createBackup(),
             ),
-            const Divider(height: 64),
+            const SizedBox(height: 16),
             _ActionCard(
-              title: "Restaurar Datos",
+              title: "Restaurar datos",
               description:
-                  "Carga datos desde un archivo de copia de seguridad previo. ¡ATENCIÓN! Esto SOBRESCRIBIRÁ todos tus datos actuales.",
-              buttonText: "Restaurar Backup",
-              icon: Icons.restore,
+                  "Carga un backup previo. Esta acción sobrescribe los datos actuales.",
+              buttonText: "Restaurar backup",
+              icon: Icons.restore_rounded,
               enabled: !state.isLoading,
               isDestructive: true,
               onTap: () {
@@ -89,28 +82,12 @@ class BackupRestoreScreen extends ConsumerWidget {
                   context: context,
                   builder: (context) => AlertDialog(
                     icon: Icon(
-                      Icons.info,
-                      color: Theme.of(context).colorScheme.error,
+                      Icons.warning_amber_rounded,
+                      color: scheme.error,
                     ),
-                    title: const Text("⚠️ Advertencia de Restauración"),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Estás a punto de **SOBRESCRIBIR** todos tus datos actuales con los del archivo de backup.",
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          "Esta acción NO se puede deshacer.",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text("¿Deseas continuar?"),
-                      ],
+                    title: const Text("Confirmar restauración"),
+                    content: const Text(
+                      "Estás a punto de sobrescribir todos tus datos actuales con el archivo de backup. Esta acción no se puede deshacer.",
                     ),
                     actions: [
                       TextButton(
@@ -123,9 +100,10 @@ class BackupRestoreScreen extends ConsumerWidget {
                           notifier.restoreBackup();
                         },
                         style: FilledButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.error,
+                          backgroundColor: scheme.error,
+                          foregroundColor: scheme.onError,
                         ),
-                        child: const Text("Confirmar Restauración"),
+                        child: const Text("Restaurar"),
                       ),
                     ],
                   ),
@@ -160,51 +138,70 @@ class _ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final containerColor = isDestructive
-        ? colorScheme.surfaceContainerHighest
-        : colorScheme.surfaceContainerHigh;
-    final iconColor = isDestructive ? colorScheme.error : colorScheme.primary;
+    final scheme = Theme.of(context).colorScheme;
+    final accent = isDestructive ? scheme.error : scheme.primary;
 
     return Card(
-      color: containerColor,
+      color: isDestructive
+          ? scheme.errorContainer.withValues(alpha: 0.42)
+          : scheme.surfaceContainerLow,
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(icon, size: 32, color: iconColor),
-                const SizedBox(width: 12),
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Icon(icon, color: accent),
+                ),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Text(
                     title,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            Text(description, textAlign: TextAlign.justify),
-            const SizedBox(height: 24),
+            Text(
+              description,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: scheme.onSurfaceVariant,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 18),
             SizedBox(
               width: double.infinity,
-              child: FilledButton(
+              child: FilledButton.icon(
                 onPressed: enabled ? onTap : null,
                 style: isDestructive
                     ? FilledButton.styleFrom(
-                        backgroundColor: colorScheme.error,
-                        foregroundColor: colorScheme.onError,
+                        backgroundColor: scheme.error,
+                        foregroundColor: scheme.onError,
                       )
                     : null,
-                child: Text(buttonText),
+                icon: Icon(
+                  isDestructive
+                      ? Icons.restore_rounded
+                      : Icons.download_rounded,
+                ),
+                label: Text(buttonText),
               ),
             ),
           ],
         ),
       ),
-    );
+    ).animate().fadeIn(duration: 240.ms).slideY(begin: 0.04, end: 0);
   }
 }
