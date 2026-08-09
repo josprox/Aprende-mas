@@ -138,7 +138,7 @@ class ModuleDetailScreen extends ConsumerWidget {
                                   ),
                                   const SizedBox(height: 16),
                                   MarkdownBody(
-                                    data: submodule.contentMd,
+                                    data: _formatMarkdownContent(submodule.contentMd),
                                     selectable: true,
                                     styleSheet:
                                         MarkdownStyleSheet.fromTheme(
@@ -161,16 +161,25 @@ class ModuleDetailScreen extends ConsumerWidget {
                                                 fontWeight: FontWeight.w900,
                                               ),
                                           blockquoteDecoration: BoxDecoration(
-                                            color: scheme.secondaryContainer,
+                                            color: scheme.secondaryContainer.withOpacity(0.5),
                                             borderRadius: BorderRadius.circular(
-                                              18,
+                                              16,
                                             ),
+                                          ),
+                                          code: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                            fontFamily: 'monospace',
+                                            fontWeight: FontWeight.bold,
+                                            color: scheme.primary,
+                                            backgroundColor: scheme.primaryContainer.withOpacity(0.4),
                                           ),
                                           codeblockDecoration: BoxDecoration(
                                             color:
                                                 scheme.surfaceContainerHighest,
                                             borderRadius: BorderRadius.circular(
-                                              18,
+                                              16,
+                                            ),
+                                            border: Border.all(
+                                              color: scheme.outlineVariant,
                                             ),
                                           ),
                                         ),
@@ -194,5 +203,39 @@ class ModuleDetailScreen extends ConsumerWidget {
         },
       ),
     );
+  }
+
+  String _formatMarkdownContent(String raw) {
+    if (raw.isEmpty) return raw;
+    String processed = raw;
+
+    // Normalize display math \[ ... \] to display code blocks
+    processed = processed.replaceAllMapped(
+      RegExp(r'\\\[(.*?)\\\]', dotAll: true),
+      (match) {
+        final math = match.group(1)?.trim() ?? '';
+        return '\n\n```\n$math\n```\n\n';
+      },
+    );
+
+    // Normalize inline math \( ... \) to clean inline math code pills
+    processed = processed.replaceAllMapped(
+      RegExp(r'\\\((.*?)\\\)'),
+      (match) {
+        final math = match.group(1)?.trim() ?? '';
+        return ' `$math` ';
+      },
+    );
+
+    // Format mermaid codeblocks into clean visual diagram callout blocks
+    processed = processed.replaceAllMapped(
+      RegExp(r'```mermaid\s*(.*?)```', dotAll: true),
+      (match) {
+        final code = match.group(1)?.trim() ?? '';
+        return '\n\n> 📊 **Diagrama / Flujo**\n```\n$code\n```\n\n';
+      },
+    );
+
+    return processed;
   }
 }

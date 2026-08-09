@@ -70,16 +70,31 @@ class SubjectImport {
   });
 
   factory SubjectImport.fromJson(Map<String, dynamic> json) {
-    final rawModules = (json['modules'] ?? json['sections']) as List<dynamic>? ?? [];
+    final rawModules = (json['modules'] ?? json['modulos'] ?? json['sections']) as List<dynamic>? ?? [];
     final modulesList = rawModules
         .whereType<Map<String, dynamic>>()
         .map((e) => ModuleImport.fromJson(e))
         .toList();
 
+    final name = json['name']?.toString() ??
+        json['title']?.toString() ??
+        json['subject_name']?.toString() ??
+        json['materia']?.toString() ??
+        'Materia';
+
+    final version = json['version']?.toString() ??
+        json['ver']?.toString() ??
+        json['v']?.toString() ??
+        '1.0';
+
+    final author = json['author']?.toString() ??
+        json['autor']?.toString() ??
+        'Joss Red';
+
     return SubjectImport(
-      name: json['name']?.toString() ?? json['title']?.toString() ?? 'Materia',
-      author: json['author']?.toString() ?? 'Joss Red',
-      version: json['version']?.toString() ?? '1.0',
+      name: name,
+      author: author,
+      version: version,
       modules: modulesList,
     );
   }
