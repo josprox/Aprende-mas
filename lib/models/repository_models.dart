@@ -24,17 +24,23 @@ class RepositoryItem {
   });
 
   factory RepositoryItem.fromJson(Map<String, dynamic> json) {
+    int parseInt(dynamic val) {
+      if (val == null) return 0;
+      if (val is int) return val;
+      return int.tryParse(val.toString()) ?? 0;
+    }
+
     return RepositoryItem(
-      id: json['id'] as int,
-      userId: json['user_id'] as int,
-      title: json['title'] as String,
-      description: json['description'] as String,
-      filePath: json['file_path'] as String,
-      version: json['version'] as String,
-      isOnline: json['is_online'] as int,
-      author: json['author'] as String,
-      createdAt: json['created_at'] as String?,
-      updatedAt: json['updated_at'] as String?,
+      id: parseInt(json['id']),
+      userId: parseInt(json['user_id'] ?? json['userId']),
+      title: json['title']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      filePath: json['file_path']?.toString() ?? json['filePath']?.toString() ?? '',
+      version: json['version']?.toString() ?? '1.0',
+      isOnline: parseInt(json['is_online'] ?? json['isOnline'] ?? 1),
+      author: json['author']?.toString() ?? '',
+      createdAt: json['created_at']?.toString(),
+      updatedAt: json['updated_at']?.toString(),
     );
   }
 
@@ -72,13 +78,32 @@ class PaginationMeta {
   });
 
   factory PaginationMeta.fromJson(Map<String, dynamic> json) {
+    int parseInt(dynamic val) {
+      if (val == null) return 1;
+      if (val is int) return val;
+      return int.tryParse(val.toString()) ?? 1;
+    }
+
+    final currentPage = parseInt(
+      json['current_page'] ?? json['page'] ?? json['currentPage'],
+    );
+    final lastPage = parseInt(
+      json['last_page'] ?? json['total_pages'] ?? json['lastPage'],
+    );
+    final perPage = parseInt(
+      json['per_page'] ?? json['limit'] ?? json['perPage'],
+    );
+    final total = parseInt(
+      json['total'] ?? json['total_count'] ?? json['totalCount'],
+    );
+
     return PaginationMeta(
-      currentPage: json['current_page'] as int,
-      lastPage: json['last_page'] as int,
-      perPage: json['per_page'] as int,
-      total: json['total'] as int,
-      nextPageUrl: json['next_page_url'] as String?,
-      prevPageUrl: json['prev_page_url'] as String?,
+      currentPage: currentPage,
+      lastPage: lastPage,
+      perPage: perPage,
+      total: total,
+      nextPageUrl: json['next_page_url']?.toString(),
+      prevPageUrl: json['prev_page_url']?.toString(),
     );
   }
 
@@ -101,11 +126,17 @@ class RepositoryListResponse {
   const RepositoryListResponse({required this.data, required this.meta});
 
   factory RepositoryListResponse.fromJson(Map<String, dynamic> json) {
+    final rawData = json['data'] as List<dynamic>? ?? [];
+    final items = rawData
+        .whereType<Map<String, dynamic>>()
+        .map((e) => RepositoryItem.fromJson(e))
+        .toList();
+
+    final metaJson = (json['meta'] ?? json['pagination']) as Map<String, dynamic>? ?? {};
+
     return RepositoryListResponse(
-      data: (json['data'] as List<dynamic>)
-          .map((e) => RepositoryItem.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      meta: PaginationMeta.fromJson(json['meta'] as Map<String, dynamic>),
+      data: items,
+      meta: PaginationMeta.fromJson(metaJson),
     );
   }
 

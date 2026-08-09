@@ -1,13 +1,20 @@
+import 'package:aprende_mas/viewmodels/auth_viewmodel.dart';
+import 'package:aprende_mas/viewmodels/repository_store_viewmodel.dart';
+import 'package:aprende_mas/views/auth/login_screen.dart';
+import 'package:aprende_mas/views/auth/user_profile_dialog.dart';
 import 'package:aprende_mas/views/settings/backup_restore_screen.dart';
 import 'package:aprende_mas/views/settings/legal_info_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authViewModelProvider);
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -16,6 +23,47 @@ class SettingsScreen extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
+                _SettingsGroupCard(
+                  title: "Cuenta",
+                  children: [
+                    _SettingsItem(
+                      headline: authState.isLoggedIn
+                          ? (authState.user?.fullName ?? "Cuenta activa")
+                          : "Iniciar sesión en Joss Red",
+                      supportingText: authState.isLoggedIn
+                          ? "@${authState.user?.username ?? ''} (${authState.user?.email ?? ''})"
+                          : "Conéctate para sincronizar y descargar materias.",
+                      icon: authState.isLoggedIn
+                          ? Icons.person_rounded
+                          : Icons.login_rounded,
+                      onTap: () {
+                        if (authState.isLoggedIn) {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (_) => const UserProfileDialog(),
+                          );
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => LoginScreen(
+                                onSuccess: () {
+                                  ref
+                                      .read(
+                                        repositoryStoreViewModelProvider.notifier,
+                                      )
+                                      .fetchRepositories();
+                                },
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
                 _SettingsGroupCard(
                   title: "Datos",
                   children: [

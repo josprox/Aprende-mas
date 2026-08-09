@@ -2,7 +2,7 @@
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
-        android:label="Aprende Mas"
+        android:label="Aprende Más"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
     <activity

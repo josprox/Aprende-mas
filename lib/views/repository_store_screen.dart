@@ -1,7 +1,10 @@
 import 'dart:async';
 
 import 'package:aprende_mas/models/repository_models.dart';
+import 'package:aprende_mas/viewmodels/auth_viewmodel.dart';
 import 'package:aprende_mas/viewmodels/repository_store_viewmodel.dart';
+import 'package:aprende_mas/views/auth/login_screen.dart';
+import 'package:aprende_mas/views/auth/user_profile_dialog.dart';
 import 'package:aprende_mas/widgets/app_empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -42,9 +45,34 @@ class _RepositoryStoreScreenState extends ConsumerState<RepositoryStoreScreen> {
     }
   }
 
+  void _openLogin() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => LoginScreen(
+          onSuccess: () {
+            ref
+                .read(repositoryStoreViewModelProvider.notifier)
+                .fetchRepositories();
+          },
+        ),
+      ),
+    );
+  }
+
+  void _openProfile() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => const UserProfileDialog(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(repositoryStoreViewModelProvider);
+    final authState = ref.watch(authViewModelProvider);
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
     return Scaffold(
       body: CustomScrollView(
@@ -55,17 +83,56 @@ class _RepositoryStoreScreenState extends ConsumerState<RepositoryStoreScreen> {
             actions: [
               if (state.isLoading)
                 const Padding(
-                  padding: EdgeInsets.only(right: 16),
+                  padding: EdgeInsets.only(right: 12),
                   child: Center(
                     child: SizedBox.square(
-                      dimension: 22,
+                      dimension: 20,
                       child: CircularProgressIndicator(strokeWidth: 2.5),
                     ),
                   ),
                 ),
+
+              // Auth Profile or Login button
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: authState.isLoggedIn
+                    ? IconButton.filledTonal(
+                        onPressed: _openProfile,
+                        icon: Text(
+                          authState.user?.fullName.isNotEmpty == true
+                              ? authState.user!.fullName[0].toUpperCase()
+                              : 'U',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: scheme.onPrimaryContainer,
+                          ),
+                        ),
+                        tooltip: 'Perfil (${authState.user?.username})',
+                      )
+                    : FilledButton.tonalIcon(
+                        onPressed: _openLogin,
+                        icon: const Icon(Icons.person_rounded, size: 18),
+                        label: const Text('Iniciar Sesión'),
+                      ),
+              ),
             ],
           ),
-          if (state.isError && state.items.isEmpty)
+
+          if (!authState.isLoggedIn && state.isError && state.items.isEmpty)
+            SliverFillRemaining(
+              child: AppEmptyState(
+                icon: Icons.lock_rounded,
+                title: "Inicia sesión requerida",
+                message:
+                    "Debes iniciar sesión con tu cuenta para ver y descargar materias de la tienda.",
+                action: FilledButton.icon(
+                  onPressed: _openLogin,
+                  icon: const Icon(Icons.login_rounded),
+                  label: const Text("Iniciar Sesión"),
+                ),
+              ),
+            )
+          else if (state.isError && state.items.isEmpty)
             SliverFillRemaining(
               child: AppEmptyState(
                 icon: Icons.wifi_off_rounded,
@@ -98,7 +165,10 @@ class _RepositoryStoreScreenState extends ConsumerState<RepositoryStoreScreen> {
                           )
                         : const SizedBox.shrink();
                   }
-                  return _RepositoryCard(item: state.items[index])
+                  return _RepositoryCard(
+                    item: state.items[index],
+                    onLoginRequired: _openLogin,
+                  )
                       .animate(delay: (35 * index).ms)
                       .fadeIn()
                       .slideY(begin: 0.04, end: 0);
@@ -113,8 +183,12 @@ class _RepositoryStoreScreenState extends ConsumerState<RepositoryStoreScreen> {
 
 class _RepositoryCard extends ConsumerWidget {
   final RepositoryItem item;
+  final VoidCallback onLoginRequired;
 
-  const _RepositoryCard({required this.item});
+  const _RepositoryCard({
+    required this.item,
+    required this.onLoginRequired,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -123,6 +197,7 @@ class _RepositoryCard extends ConsumerWidget {
     final status =
         ref.watch(repositoryStoreViewModelProvider).itemStatuses[item.id] ??
         RepositoryStatus.notInstalled;
+    final authState = ref.watch(authViewModelProvider);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 14),
@@ -220,6 +295,10 @@ class _RepositoryCard extends ConsumerWidget {
                   onPressed: status == RepositoryStatus.installed
                       ? null
                       : () async {
+                          if (!authState.isLoggedIn) {
+                            onLoginRequired();
+                            return;
+                          }
                           await _install(context, ref, status);
                         },
                   icon: Icon(_getButtonIcon(status)),

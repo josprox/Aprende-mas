@@ -45,9 +45,11 @@ class BackupViewModel extends StateNotifier<BackupUiState> {
       }
 
       // Use FilePicker to save
-      final String? outputFile = await FilePicker.platform.saveFile(
+      final bytes = await file.readAsBytes();
+      final String? outputFile = await FilePicker.saveFile(
         dialogTitle: 'Guardar copia de seguridad',
         fileName: 'backup_AprendeMas.db',
+        bytes: bytes,
       );
 
       if (outputFile != null) {
@@ -74,7 +76,7 @@ class BackupViewModel extends StateNotifier<BackupUiState> {
   Future<void> restoreBackup() async {
     state = state.copyWith(isLoading: true, message: "Restaurando datos...");
     try {
-      final FilePickerResult? result = await FilePicker.platform.pickFiles();
+      final FilePickerResult? result = await FilePicker.pickFiles();
 
       if (result != null) {
         final path = result.files.single.path;

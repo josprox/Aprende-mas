@@ -121,7 +121,7 @@ class RepositoryStoreViewModel extends StateNotifier<RepositoryState> {
     try {
       final response = await _apiService.getRepositories(page: page);
 
-      List<RepositoryItem> currentItems = page == 1 ? [] : state.items;
+      final List<RepositoryItem> currentItems = page == 1 ? [] : state.items;
 
       state = state.copyWith(
         isLoading: false,

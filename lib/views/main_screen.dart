@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:aprende_mas/services/update_service.dart';
+import 'package:aprende_mas/views/force_update_screen.dart';
 import 'package:aprende_mas/views/grades_screen.dart';
 import 'package:aprende_mas/views/settings/settings_screen.dart';
 import 'package:aprende_mas/views/subject_list_screen.dart';
@@ -22,6 +26,24 @@ class _MainScreenState extends State<MainScreen> {
     const GradesScreen(),
     const SettingsScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_checkAppUpdate());
+  }
+
+  Future<void> _checkAppUpdate() async {
+    final updateInfo = await UpdateService.checkForUpdate();
+    if (updateInfo != null && mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => ForceUpdateScreen(updateInfo: updateInfo),
+        ),
+        (route) => false,
+      );
+    }
+  }
 
   @override
   void dispose() {
