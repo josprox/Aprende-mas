@@ -208,6 +208,10 @@ class _GroqKeyDialogState extends State<_GroqKeyDialog> {
   final _controller = TextEditingController();
   bool _loading = true;
   bool _obscureText = true;
+  bool _loadingModels = false;
+  String? _selectedModel;
+  String? _modelError;
+  List<String> _models = const [];
 
   @override
   void initState() {
@@ -217,11 +221,39 @@ class _GroqKeyDialogState extends State<_GroqKeyDialog> {
 
   Future<void> _loadKey() async {
     final key = await GroqApiService.getPersonalApiKey();
+    final model = await GroqApiService.getPersonalModel();
     if (!mounted) return;
     setState(() {
       _controller.text = key ?? '';
+      _selectedModel = model;
       _loading = false;
     });
+    if (key != null) _loadModels();
+  }
+
+  Future<void> _loadModels() async {
+    setState(() {
+      _loadingModels = true;
+      _modelError = null;
+    });
+    try {
+      final models = await GroqApiService().getAvailableModels(
+        apiKey: _controller.text.trim(),
+      );
+      if (!mounted) return;
+      setState(() {
+        _models = models;
+        if (_selectedModel != null && !models.contains(_selectedModel)) {
+          _models = [...models, _selectedModel!]..sort();
+        }
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() => _modelError = 'No se pudieron consultar los modelos.');
+      }
+    } finally {
+      if (mounted) setState(() => _loadingModels = false);
+    }
   }
 
   @override
@@ -239,8 +271,18 @@ class _GroqKeyDialogState extends State<_GroqKeyDialog> {
     final key = _controller.text.trim();
     if (key.isEmpty) {
       await GroqApiService.clearPersonalApiKey();
+      await GroqApiService.clearPersonalModel();
     } else {
+      if (_selectedModel == null || _selectedModel!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Selecciona un modelo antes de guardar.'),
+          ),
+        );
+        return;
+      }
       await GroqApiService.savePersonalApiKey(key);
+      await GroqApiService.savePersonalModel(_selectedModel!);
     }
     if (mounted) Navigator.pop(context);
   }
@@ -286,6 +328,53 @@ class _GroqKeyDialogState extends State<_GroqKeyDialog> {
                   icon: const Icon(Icons.open_in_new_rounded),
                   label: const Text('Obtener una llave en Groq'),
                 ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Modelo',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: _loadingModels ? null : _loadModels,
+                      icon: _loadingModels
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.refresh_rounded),
+                      label: const Text('Actualizar'),
+                    ),
+                  ],
+                ),
+                if (_models.isNotEmpty)
+                  DropdownButtonFormField<String>(
+                    value: _selectedModel,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      hintText: 'Selecciona un modelo disponible',
+                    ),
+                    items: _models
+                        .map(
+                          (model) => DropdownMenuItem(
+                            value: model,
+                            child: Text(model, overflow: TextOverflow.ellipsis),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (model) =>
+                        setState(() => _selectedModel = model),
+                  )
+                else
+                  Text(
+                    _modelError ??
+                        'Guarda una llave y toca Actualizar para ver los modelos.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
               ],
             ),
       actions: [

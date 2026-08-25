@@ -9,8 +9,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// de IA de Joss Red con la sesión autenticada del usuario.
 class GroqApiService {
   static const _personalApiKeyPreference = 'groq_personal_api_key';
+  static const _personalModelPreference = 'groq_personal_model';
   static const _authTokenPreference = 'joss_auth_jwt_token';
-  static const _defaultModel = 'openai/gpt-oss-120b';
 
   final Dio _groqDio = Dio(
     BaseOptions(
@@ -38,6 +38,42 @@ class GroqApiService {
     await preferences.remove(_personalApiKeyPreference);
   }
 
+  static Future<String?> getPersonalModel() async {
+    final preferences = await SharedPreferences.getInstance();
+    final model = preferences.getString(_personalModelPreference)?.trim();
+    return model == null || model.isEmpty ? null : model;
+  }
+
+  static Future<void> savePersonalModel(String model) async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(_personalModelPreference, model.trim());
+  }
+
+  static Future<void> clearPersonalModel() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove(_personalModelPreference);
+  }
+
+  Future<List<String>> getAvailableModels({String? apiKey}) async {
+    apiKey ??= await getPersonalApiKey();
+    if (apiKey == null) {
+      throw StateError('Primero guarda tu llave personal de Groq.');
+    }
+    final response = await _groqDio.get(
+      '/models',
+      options: Options(headers: {'Authorization': 'Bearer $apiKey'}),
+    );
+    final models =
+        ((response.data as Map<String, dynamic>)['data'] as List? ?? [])
+            .whereType<Map>()
+            .map((item) => item['id']?.toString())
+            .whereType<String>()
+            .where((id) => id.isNotEmpty)
+            .toList()
+          ..sort();
+    return models;
+  }
+
   Future<List<QuizQuestion>> generateQuestions(
     String moduleContent,
     int moduleId,
@@ -58,11 +94,15 @@ class GroqApiService {
     String moduleContent,
     String apiKey,
   ) async {
+    final model = await getPersonalModel();
+    if (model == null) {
+      throw StateError('Selecciona un modelo de Groq en Ajustes.');
+    }
     final response = await _groqDio.post(
       '/chat/completions',
       data: GroqRequest(
         messages: [Message(role: 'user', content: _quizPrompt(moduleContent))],
-        model: _defaultModel,
+        model: model,
         response_format: const ResponseFormat(type: 'json_object'),
       ).toJson(),
       options: Options(headers: {'Authorization': 'Bearer $apiKey'}),
@@ -137,12 +177,18 @@ $moduleContent
       return;
     }
 
+    final model = await getPersonalModel();
+    if (model == null) {
+      yield 'Selecciona un modelo de Groq en Ajustes para usar tu llave personal.';
+      return;
+    }
+
     try {
       final response = await _groqDio.post(
         '/chat/completions',
         data: GroqRequest(
           messages: chatHistory,
-          model: _defaultModel,
+          model: model,
           stream: true,
           response_format: const ResponseFormat(type: 'text'),
         ).toJson(),
