@@ -1,151 +1,202 @@
 import 'dart:convert';
-import 'package:dio/dio.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 import 'package:aprende_mas/models/api_models.dart';
-// For Question entity mapping if needed, though we usually return domain models
-// To distinguish from models
+import 'package:aprende_mas/services/api/auth_api_service.dart';
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+/// Usa la llave de Groq del usuario cuando existe. Si no, solicita el servicio
+/// de IA de Joss Red con la sesión autenticada del usuario.
 class GroqApiService {
-  final Dio _dio = Dio();
+  static const _personalApiKeyPreference = 'groq_personal_api_key';
+  static const _authTokenPreference = 'joss_auth_jwt_token';
+  static const _defaultModel = 'openai/gpt-oss-120b';
 
-  GroqApiService() {
-    _dio.options.baseUrl = 'https://api.groq.com/openai/v1';
-    _dio.options.headers = {'Content-Type': 'application/json'};
+  final Dio _groqDio = Dio(
+    BaseOptions(
+      baseUrl: 'https://api.groq.com/openai/v1',
+      connectTimeout: const Duration(seconds: 20),
+      receiveTimeout: const Duration(seconds: 75),
+      headers: const {'Content-Type': 'application/json'},
+    ),
+  );
+  final Dio _serverDio = Dio();
+
+  static Future<String?> getPersonalApiKey() async {
+    final preferences = await SharedPreferences.getInstance();
+    final key = preferences.getString(_personalApiKeyPreference)?.trim();
+    return key == null || key.isEmpty ? null : key;
   }
 
-  Future<String?> _getApiKey() async {
-    await dotenv.load(fileName: ".env"); // Adjust path as needed
-    return dotenv.env['GROQ_CLOUD_API'];
+  static Future<void> savePersonalApiKey(String apiKey) async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(_personalApiKeyPreference, apiKey.trim());
   }
 
-  Future<String?> _getModel() async {
-    await dotenv.load(fileName: ".env");
-    return dotenv.env['GROQ_CLOUD_MODEL'];
+  static Future<void> clearPersonalApiKey() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove(_personalApiKeyPreference);
   }
 
   Future<List<QuizQuestion>> generateQuestions(
     String moduleContent,
     int moduleId,
   ) async {
-    final apiKey = await _getApiKey();
-    final modelGroq = await _getModel();
-
-    if (apiKey == null || apiKey.isEmpty || apiKey == "TU_API_KEY_AQUI") {
-      print("API Key de Groq no encontrada o inválida.");
-      return [];
-    }
-
-    final prompt =
-        """
-            ACTÚA COMO UN EXPERTO DISEÑADOR DE EXÁMENES DE CERTIFICACIÓN (EGEL, CCNA).
-            Tu objetivo es crear un banco de preguntas de alta dificultad para un examen de nivel licenciatura, basado estrictamente en el siguiente contenido: "$moduleContent".
-
-            REGLAS CRÍTICAS PARA LAS PREGUNTAS:
-            1.  **Formato:** Genera entre 15 y 30 preguntas de opción múltiple. (Prioriza calidad sobre cantidad).
-            2.  **Opciones:** 4 opciones de respuesta (A, B, C, D).
-            3.  **Complejidad (Nivel Licenciatura/EGEL):** Las preguntas deben forzar el ANÁLISIS, la APLICACIÓN o la COMPARACIÓN de conceptos.
-            4.  **Explicación (CRÍTICO):** Para cada pregunta, debes incluir un campo 'explanationText' que justifique de forma concisa (máx. 2 frases) POR QUÉ la 'correctAnswer' es la correcta, basándose explícitamente en el contenido proporcionado.
-            
-            FORMATO DE SALIDA OBLIGATORIO:
-            Responde *únicamente* con el objeto JSON. No incluyas texto introductorio. La estructura exacta es:
-            {
-                "questions": [
-                    {
-                       "questionText": "Texto de la pregunta...",
-                       "optionA": "Opción A (distractor plausible)",
-                       "optionB": "Opción B (distractor plausible)",
-                       "optionC": "Opción C (respuesta correcta)",
-                       "optionD": "Opción D (distractor plausible)",
-                       "correctAnswer": "C",
-                       "explanationText": "Correcto, el concepto X es fundamental en la capa Y porque..." // <--- ¡NUEVA ESTRUCTURA!
-                    }
-                ]
-            }
-        """;
-
-    final request = GroqRequest(
-      messages: [Message(role: "user", content: prompt)],
-      model: modelGroq ?? 'llama3-70b-8192', // Fallback model
-      response_format: const ResponseFormat(type: "json_object"),
-    );
-
+    final apiKey = await getPersonalApiKey();
     try {
-      final response = await _dio.post(
-        '/chat/completions',
-        data: request.toJson(),
-        options: Options(headers: {'Authorization': 'Bearer $apiKey'}),
-      );
-
-      final groqResponse = GroqResponse.fromJson(response.data);
-      final jsonContent = groqResponse.choices?.firstOrNull?.message.content;
-
-      if (jsonContent == null) {
-        print("⚠️ No se recibió contenido en 'choices'.");
-        return [];
-      }
-
-      final quizPayload = QuizPayload.fromJson(jsonDecode(jsonContent));
-      return quizPayload.questions;
-    } catch (e) {
-      print("💥 Error al generar preguntas: $e");
+      final content = apiKey == null
+          ? await _generateQuestionsWithServer(moduleContent, moduleId)
+          : await _generateQuestionsWithPersonalKey(moduleContent, apiKey);
+      return _parseQuestions(content);
+    } catch (error) {
+      print('Error al generar preguntas: $error');
       return [];
     }
   }
 
-  Stream<String> streamChat(List<Message> chatHistory) async* {
-    final apiKey = await _getApiKey();
-    final modelGroq = await _getModel();
+  Future<String> _generateQuestionsWithPersonalKey(
+    String moduleContent,
+    String apiKey,
+  ) async {
+    final response = await _groqDio.post(
+      '/chat/completions',
+      data: GroqRequest(
+        messages: [Message(role: 'user', content: _quizPrompt(moduleContent))],
+        model: _defaultModel,
+        response_format: const ResponseFormat(type: 'json_object'),
+      ).toJson(),
+      options: Options(headers: {'Authorization': 'Bearer $apiKey'}),
+    );
+    return GroqResponse.fromJson(
+          response.data as Map<String, dynamic>,
+        ).choices?.firstOrNull?.message.content ??
+        '';
+  }
 
-    if (apiKey == null || apiKey.isEmpty || apiKey == "TU_API_KEY_AQUI") {
-      yield "Error: Clave de API de Groq no configurada.";
+  Future<String> _generateQuestionsWithServer(
+    String moduleContent,
+    int moduleId,
+  ) async {
+    final preferences = await SharedPreferences.getInstance();
+    final token = preferences.getString(_authTokenPreference);
+    if (token == null || token.isEmpty) {
+      throw StateError('Inicia sesión o configura tu propia llave de Groq.');
+    }
+
+    final response = await _serverDio.post(
+      '${AuthApiService.baseUrl}/ai/quiz',
+      data: {'module_content': moduleContent, 'module_id': moduleId},
+      options: Options(
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ),
+    );
+    final body = response.data as Map<String, dynamic>;
+    if (body['status'] != 'success' || body['content'] is! String) {
+      throw StateError(
+        body['message']?.toString() ?? 'Respuesta de IA inválida.',
+      );
+    }
+    return body['content'] as String;
+  }
+
+  List<QuizQuestion> _parseQuestions(String content) {
+    final jsonContent = content
+        .trim()
+        .replaceFirst(RegExp(r'^```json\s*'), '')
+        .replaceFirst(RegExp(r'\s*```$'), '');
+    if (jsonContent.isEmpty) return [];
+    return QuizPayload.fromJson(
+      jsonDecode(jsonContent) as Map<String, dynamic>,
+    ).questions;
+  }
+
+  String _quizPrompt(String moduleContent) =>
+      '''
+ACTÚA COMO UN EXPERTO DISEÑADOR DE EXÁMENES DE CERTIFICACIÓN (EGEL, CCNA).
+Crea entre 15 y 30 preguntas de opción múltiple de nivel licenciatura basadas estrictamente en el siguiente contenido. Cada pregunta debe tener cuatro opciones A, B, C y D, exigir análisis, aplicación o comparación e incluir una explicación breve de la respuesta correcta.
+
+Responde únicamente con JSON válido, sin Markdown, con esta estructura exacta:
+{"questions":[{"questionText":"...","optionA":"...","optionB":"...","optionC":"...","optionD":"...","correctAnswer":"C","explanationText":"..."}]}
+
+Contenido del módulo:
+$moduleContent
+''';
+
+  Stream<String> streamChat(List<Message> chatHistory) async* {
+    final apiKey = await getPersonalApiKey();
+    if (apiKey == null) {
+      try {
+        yield await _sendChatWithServer(chatHistory);
+      } catch (error) {
+        yield 'Error del servidor: $error';
+      }
       return;
     }
 
-    final request = GroqRequest(
-      messages: chatHistory,
-      model: modelGroq ?? 'llama3-70b-8192',
-      stream: true,
-      response_format: const ResponseFormat(type: "text"),
-    );
-
     try {
-      final response = await _dio.post(
+      final response = await _groqDio.post(
         '/chat/completions',
-        data: request.toJson(),
+        data: GroqRequest(
+          messages: chatHistory,
+          model: _defaultModel,
+          stream: true,
+          response_format: const ResponseFormat(type: 'text'),
+        ).toJson(),
         options: Options(
           headers: {'Authorization': 'Bearer $apiKey'},
           responseType: ResponseType.stream,
         ),
       );
-
-      final stream = response.data.stream;
-      await for (final chunk in stream) {
-        final String chunkStr = utf8.decode(chunk);
-        final lines = chunkStr
-            .split('\n')
-            .where((line) => line.isNotEmpty)
-            .toList();
-
-        for (final line in lines) {
-          if (line.startsWith("data: ")) {
-            final jsonString = line.substring(6);
-            if (jsonString == "[DONE]") break;
-
-            try {
-              final jsonMap = jsonDecode(jsonString);
-              // We need a specific stream response model or just parse manually
-              final content = jsonMap['choices']?[0]?['delta']?['content'];
-              if (content != null) {
-                yield content;
-              }
-            } catch (e) {
-              // Ignore parse errors for partial chunks
-            }
-          }
+      await for (final chunk in response.data.stream) {
+        for (final line in utf8.decode(chunk).split('\n')) {
+          if (!line.startsWith('data: ')) continue;
+          final value = line.substring(6);
+          if (value == '[DONE]') return;
+          try {
+            final content = jsonDecode(
+              value,
+            )['choices']?[0]?['delta']?['content'];
+            if (content != null) yield content as String;
+          } catch (_) {}
         }
       }
-    } catch (e) {
-      yield "Error del servidor: $e";
+    } catch (error) {
+      yield 'Error del servidor: $error';
     }
+  }
+
+  Future<String> _sendChatWithServer(List<Message> messages) async {
+    final preferences = await SharedPreferences.getInstance();
+    final token = preferences.getString(_authTokenPreference);
+    if (token == null || token.isEmpty) {
+      throw StateError('Inicia sesión o configura tu propia llave de Groq.');
+    }
+
+    final response = await _serverDio.post(
+      '${AuthApiService.baseUrl}/ai/chat',
+      data: {
+        'messages_json': jsonEncode(messages.map((m) => m.toJson()).toList()),
+      },
+      options: Options(
+        sendTimeout: const Duration(seconds: 20),
+        receiveTimeout: const Duration(seconds: 75),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ),
+    );
+    final body = response.data as Map<String, dynamic>;
+    if (body['status'] != 'success' || body['content'] is! String) {
+      throw StateError(
+        body['message']?.toString() ?? 'Respuesta de IA inválida.',
+      );
+    }
+    return body['content'] as String;
   }
 }

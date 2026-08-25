@@ -90,6 +90,7 @@ class ModuleDetailViewModel extends StateNotifier<ModuleDetailUiState> {
   }
 
   Future<void> onSendMessage() async {
+    if (state.chatUiState.isModelThinking) return;
     final input = state.chatUiState.currentInput.trim();
     if (input.isEmpty) return;
 
@@ -105,24 +106,6 @@ class ModuleDetailViewModel extends StateNotifier<ModuleDetailUiState> {
       ),
     );
 
-    // Prepare API messages
-    // Prepare API messages
-    final repository = ref.read(studyRepositoryProvider);
-    final submodulesStream = repository.getSubmodulesForModule(moduleId);
-    final submodules = await submodulesStream.first;
-    final contextContent = submodules.map((s) => s.contentMd).join("\n\n");
-
-    final systemMessage = Message(
-      role: 'system',
-      content:
-          "Eres un tutor experto en esta materia. Tu objetivo es ayudar al estudiante a entender el siguiente contenido. DEBES basar tus respuestas estrictamente en este contenido. Si te preguntan algo fuera de este tema, indica amablemente que solo puedes responder sobre la materia.\n\nCONTENIDO DE LA MATERIA:\n$contextContent",
-    );
-
-    final apiMessages = [
-      systemMessage,
-      ...currentHistory.map((m) => Message(role: m.role, content: m.content)),
-    ];
-
     // Add placeholder for AI response
     const aiPlaceholder = ChatMessage(
       role: 'assistant',
@@ -136,6 +119,24 @@ class ModuleDetailViewModel extends StateNotifier<ModuleDetailUiState> {
     );
 
     try {
+      final repository = ref.read(studyRepositoryProvider);
+      final submodules = await repository
+          .getSubmodulesForModule(moduleId)
+          .first
+          .timeout(const Duration(seconds: 20));
+      final contextContent = submodules.map((s) => s.contentMd).join("\n\n");
+      final systemMessage = Message(
+        role: 'system',
+        content:
+            "Eres un tutor experto en esta materia. Tu objetivo es ayudar al estudiante a entender el siguiente contenido. DEBES basar tus respuestas estrictamente en este contenido. Si te preguntan algo fuera de este tema, indica amablemente que solo puedes responder sobre la materia.\n\nCONTENIDO DE LA MATERIA:\n$contextContent",
+      );
+      final historyForApi = currentHistory.length > 10
+          ? currentHistory.sublist(currentHistory.length - 10)
+          : currentHistory;
+      final apiMessages = [
+        systemMessage,
+        ...historyForApi.map((m) => Message(role: m.role, content: m.content)),
+      ];
       final groqService = ref.read(groqApiServiceProvider);
       final stream = groqService.streamChat(apiMessages);
 
@@ -183,6 +184,10 @@ class ModuleDetailViewModel extends StateNotifier<ModuleDetailUiState> {
           chatHistory: history,
           isModelThinking: false,
         ),
+      );
+    } else {
+      state = state.copyWith(
+        chatUiState: state.chatUiState.copyWith(isModelThinking: false),
       );
     }
   }

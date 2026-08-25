@@ -1,5 +1,6 @@
 import 'package:aprende_mas/viewmodels/auth_viewmodel.dart';
 import 'package:aprende_mas/viewmodels/repository_store_viewmodel.dart';
+import 'package:aprende_mas/services/api/groq_api_service.dart';
 import 'package:aprende_mas/views/auth/login_screen.dart';
 import 'package:aprende_mas/views/auth/user_profile_dialog.dart';
 import 'package:aprende_mas/views/settings/backup_restore_screen.dart';
@@ -7,6 +8,7 @@ import 'package:aprende_mas/views/settings/legal_info_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -51,7 +53,8 @@ class SettingsScreen extends ConsumerWidget {
                                 onSuccess: () {
                                   ref
                                       .read(
-                                        repositoryStoreViewModelProvider.notifier,
+                                        repositoryStoreViewModelProvider
+                                            .notifier,
                                       )
                                       .fetchRepositories();
                                 },
@@ -60,6 +63,22 @@ class SettingsScreen extends ConsumerWidget {
                           );
                         }
                       },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                _SettingsGroupCard(
+                  title: "Inteligencia artificial",
+                  children: [
+                    _SettingsItem(
+                      headline: "Llave personal de Groq",
+                      supportingText:
+                          "Úsala directamente o inicia sesión para usar el servicio de Joss Red.",
+                      icon: Icons.key_rounded,
+                      onTap: () => showDialog(
+                        context: context,
+                        builder: (_) => const _GroqKeyDialog(),
+                      ),
                     ),
                   ],
                 ),
@@ -174,6 +193,111 @@ class _SettingsItem extends StatelessWidget {
       ),
       trailing: Icon(Icons.chevron_right_rounded, color: scheme.primary),
       onTap: onTap,
+    );
+  }
+}
+
+class _GroqKeyDialog extends StatefulWidget {
+  const _GroqKeyDialog();
+
+  @override
+  State<_GroqKeyDialog> createState() => _GroqKeyDialogState();
+}
+
+class _GroqKeyDialogState extends State<_GroqKeyDialog> {
+  final _controller = TextEditingController();
+  bool _loading = true;
+  bool _obscureText = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadKey();
+  }
+
+  Future<void> _loadKey() async {
+    final key = await GroqApiService.getPersonalApiKey();
+    if (!mounted) return;
+    setState(() {
+      _controller.text = key ?? '';
+      _loading = false;
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _openGroqKeys() async {
+    final uri = Uri.parse('https://console.groq.com/keys');
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _save() async {
+    final key = _controller.text.trim();
+    if (key.isEmpty) {
+      await GroqApiService.clearPersonalApiKey();
+    } else {
+      await GroqApiService.savePersonalApiKey(key);
+    }
+    if (mounted) Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Llave de Groq'),
+      content: _loading
+          ? const SizedBox(
+              height: 72,
+              child: Center(child: CircularProgressIndicator()),
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'La llave se guarda solo en este dispositivo y no se incluye en la app distribuida.',
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _controller,
+                  obscureText: _obscureText,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  decoration: InputDecoration(
+                    labelText: 'API key',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureText
+                            ? Icons.visibility_rounded
+                            : Icons.visibility_off_rounded,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscureText = !_obscureText),
+                    ),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: _openGroqKeys,
+                  icon: const Icon(Icons.open_in_new_rounded),
+                  label: const Text('Obtener una llave en Groq'),
+                ),
+              ],
+            ),
+      actions: [
+        TextButton(
+          onPressed: _loading ? null : () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _loading ? null : _save,
+          child: const Text('Guardar'),
+        ),
+      ],
     );
   }
 }

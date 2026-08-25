@@ -6,14 +6,15 @@ class AuthApiService {
   final Dio _dio = Dio();
 
   static String get baseUrl {
-    String base = dotenv.env['JOSSRED'] ?? 'https://joss.red/';
+    String base = dotenv.env['JOSSRED']?.trim() ?? '';
+    if (base.isEmpty) base = 'https://joss.red/';
     if (base.endsWith('/')) base = base.substring(0, base.length - 1);
     if (!base.endsWith('/api')) base = '$base/api';
     return base;
   }
 
   static String get defaultApiToken {
-    return dotenv.env['JOSSRED_API'] ?? 'f8f446fa-b685-4989-a3e6-7106b83d18c6';
+    return dotenv.env['JOSSRED_API']?.trim() ?? '';
   }
 
   AuthApiService() {
@@ -21,7 +22,8 @@ class AuthApiService {
     _dio.options.headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      if (defaultApiToken.isNotEmpty) 'Authorization': 'Bearer $defaultApiToken',
+      if (defaultApiToken.isNotEmpty)
+        'Authorization': 'Bearer $defaultApiToken',
     };
   }
 
@@ -29,16 +31,14 @@ class AuthApiService {
     try {
       final response = await _dio.post(
         '/login',
-        data: {
-          'email': email.trim(),
-          'password': password,
-        },
+        data: {'email': email.trim(), 'password': password},
       );
 
       final data = response.data;
       final status = data['status']?.toString().trim().toLowerCase();
 
-      final challengeToken = data['challenge_token'] ??
+      final challengeToken =
+          data['challenge_token'] ??
           data['challengeToken'] ??
           data['temp_token'];
 
@@ -49,7 +49,9 @@ class AuthApiService {
           success: false,
           requires2FA: true,
           challengeToken: challengeToken?.toString(),
-          message: data['message'] ?? 'Código de autenticación de 2 factores requerido.',
+          message:
+              data['message'] ??
+              'Código de autenticación de 2 factores requerido.',
         );
       }
 
@@ -76,7 +78,8 @@ class AuthApiService {
         final data = e.response!.data;
         if (data is Map) {
           final status = data['status']?.toString().trim().toLowerCase();
-          final challengeToken = data['challenge_token'] ?? data['challengeToken'];
+          final challengeToken =
+              data['challenge_token'] ?? data['challengeToken'];
           if (status == '2fa_required' || e.response?.statusCode == 202) {
             return AuthResponse(
               success: false,
@@ -95,10 +98,7 @@ class AuthApiService {
         message: 'Error al conectar con el servidor',
       );
     } catch (e) {
-      return AuthResponse(
-        success: false,
-        message: 'Error inesperado: $e',
-      );
+      return AuthResponse(success: false, message: 'Error inesperado: $e');
     }
   }
 
@@ -109,10 +109,7 @@ class AuthApiService {
     try {
       final response = await _dio.post(
         '/login/2fa',
-        data: {
-          'challenge_token': challengeToken,
-          'code': code.trim(),
-        },
+        data: {'challenge_token': challengeToken, 'code': code.trim()},
       );
 
       final data = response.data;
@@ -142,10 +139,7 @@ class AuthApiService {
           errorMessage = res['message'];
         }
       }
-      return AuthResponse(
-        success: false,
-        message: errorMessage,
-      );
+      return AuthResponse(success: false, message: errorMessage);
     } catch (e) {
       return AuthResponse(
         success: false,
@@ -195,15 +189,9 @@ class AuthApiService {
           errorMessage = res['message'];
         }
       }
-      return AuthResponse(
-        success: false,
-        message: errorMessage,
-      );
+      return AuthResponse(success: false, message: errorMessage);
     } catch (e) {
-      return AuthResponse(
-        success: false,
-        message: 'Error inesperado: $e',
-      );
+      return AuthResponse(success: false, message: 'Error inesperado: $e');
     }
   }
 

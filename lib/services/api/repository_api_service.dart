@@ -7,14 +7,15 @@ class RepositoryApiService {
   String? _userToken;
 
   static String get baseUrl {
-    String base = dotenv.env['JOSSRED'] ?? 'https://joss.red/';
+    String base = dotenv.env['JOSSRED']?.trim() ?? '';
+    if (base.isEmpty) base = 'https://joss.red/';
     if (base.endsWith('/')) base = base.substring(0, base.length - 1);
     if (!base.endsWith('/api')) base = '$base/api';
     return base;
   }
 
   static String get defaultApiToken {
-    return dotenv.env['JOSSRED_API'] ?? 'f8f446fa-b685-4989-a3e6-7106b83d18c6';
+    return dotenv.env['JOSSRED_API']?.trim() ?? '';
   }
 
   RepositoryApiService() {
@@ -40,13 +41,16 @@ class RepositoryApiService {
     };
   }
 
-  Future<RepositoryListResponse> getRepositories({int page = 1, String? token}) async {
+  Future<RepositoryListResponse> getRepositories({
+    int page = 1,
+    String? token,
+  }) async {
     try {
       final activeToken = (token != null && token.isNotEmpty)
           ? token
           : ((_userToken != null && _userToken!.isNotEmpty)
-              ? _userToken
-              : defaultApiToken);
+                ? _userToken
+                : defaultApiToken);
 
       final options = Options(
         headers: {
@@ -68,13 +72,16 @@ class RepositoryApiService {
     }
   }
 
-  Future<Map<String, dynamic>> downloadRepository(int id, {String? token}) async {
+  Future<Map<String, dynamic>> downloadRepository(
+    int id, {
+    String? token,
+  }) async {
     try {
       final activeToken = (token != null && token.isNotEmpty)
           ? token
           : ((_userToken != null && _userToken!.isNotEmpty)
-              ? _userToken
-              : defaultApiToken);
+                ? _userToken
+                : defaultApiToken);
 
       final options = Options(
         headers: {

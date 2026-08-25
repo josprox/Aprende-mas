@@ -32,10 +32,12 @@ class UpdateService {
 
   static Future<UpdateInfo?> checkForUpdate() async {
     try {
-      final String? checkUpdatesUrl = dotenv.env["JOSSREDCHECKUPDATES"] ??
-          "https://joss.red/api/version/com.josprox.jossmusic";
+      final configuredUrl = dotenv.env["JOSSREDCHECKUPDATES"]?.trim();
+      final checkUpdatesUrl = configuredUrl == null || configuredUrl.isEmpty
+          ? "https://joss.red/api/version/com.josprox.aprendemas"
+          : configuredUrl;
 
-      final response = await _dio.get(checkUpdatesUrl!);
+      final response = await _dio.get(checkUpdatesUrl);
       if (response.statusCode != 200) return null;
 
       final data = response.data is String
@@ -59,8 +61,8 @@ class UpdateService {
   }
 
   static bool _isVersionGreater(String latestVersion, String currentVersion) {
-    List<String> latestParts = latestVersion.split('.');
-    List<String> currentParts = currentVersion.split('.');
+    final List<String> latestParts = latestVersion.split('.');
+    final List<String> currentParts = currentVersion.split('.');
 
     while (latestParts.length < currentParts.length) {
       latestParts.add('0');
@@ -70,9 +72,9 @@ class UpdateService {
     }
 
     for (int i = 0; i < latestParts.length; i++) {
-      int latestPart =
+      final int latestPart =
           int.tryParse(latestParts[i].replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-      int currentPart =
+      final int currentPart =
           int.tryParse(currentParts[i].replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
 
       if (latestPart > currentPart) return true;
