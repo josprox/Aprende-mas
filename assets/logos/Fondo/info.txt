@@ -1,0 +1,14 @@
+
+Hope you enjoy your new logo, here are the people that
+made your beautiful logo happen :)
+font name: Corben-Regular
+font link: https://fonts.google.com/specimen/Corben
+font author: Vernon Adams
+font author site: http://sansoxygen.com/
+
+
+icon designer: undefined
+icon designer link: undefined
+        
+{"bg":"#EBE9F5","icon-gradient-0":"#6566CE","icon-gradient-1":"#DBC1D0","font":"#2E2B3C","slogan":"#423f50"}
+      
