@@ -84,7 +84,7 @@ class LegalInfoScreen extends StatelessWidget {
                       ),
                       recognizer: TapGestureRecognizer()
                         ..onTap = () async {
-                          final uri = Uri.parse("https://https://joss.red/support");
+                          final uri = Uri.parse("https://joss.red/support");
                           if (await canLaunchUrl(uri)) {
                             await launchUrl(uri);
                           }
