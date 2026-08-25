@@ -5,6 +5,7 @@ import 'package:aprende_mas/models/subject_models.dart';
 import 'package:aprende_mas/repositories/i_study_repository.dart';
 
 import 'package:aprende_mas/services/api/repository_api_service.dart';
+import 'package:aprende_mas/services/store_source_service.dart';
 import 'package:aprende_mas/viewmodels/providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,7 +18,7 @@ class RepositoryState {
   final bool isError;
   final int currentPage;
   final int lastPage;
-  final Map<int, RepositoryStatus> itemStatuses;
+  final Map<String, RepositoryStatus> itemStatuses;
   // We keep a reference to installed subjects to re-calculate statuses easily
   final List<Subject> installedSubjects;
 
@@ -37,7 +38,7 @@ class RepositoryState {
     bool? isError,
     int? currentPage,
     int? lastPage,
-    Map<int, RepositoryStatus>? itemStatuses,
+    Map<String, RepositoryStatus>? itemStatuses,
     List<Subject>? installedSubjects,
   }) {
     return RepositoryState(
@@ -79,12 +80,15 @@ class RepositoryStoreViewModel extends StateNotifier<RepositoryState> {
   }
 
   void _updateStatuses() {
-    final Map<int, RepositoryStatus> newStatuses = {};
+    final Map<String, RepositoryStatus> newStatuses = {};
     for (final item in state.items) {
       RepositoryStatus status = RepositoryStatus.notInstalled;
       try {
         final installed = state.installedSubjects.firstWhere(
-          (s) => s.repositoryId == item.id,
+          (s) =>
+              s.repositoryId == item.id &&
+              s.repositorySource ==
+                  (item.sourceUrl.isEmpty ? 'joss-red' : item.sourceUrl),
         );
 
         // Check for version update
@@ -99,7 +103,7 @@ class RepositoryStoreViewModel extends StateNotifier<RepositoryState> {
         // Not found
         status = RepositoryStatus.notInstalled;
       }
-      newStatuses[item.id] = status;
+      newStatuses[item.storeKey] = status;
     }
     state = state.copyWith(itemStatuses: newStatuses);
   }
@@ -118,40 +122,59 @@ class RepositoryStoreViewModel extends StateNotifier<RepositoryState> {
       state = state.copyWith(isLoading: true, isError: false);
     }
 
-    try {
-      final response = await _apiService.getRepositories(page: page);
-
-      final List<RepositoryItem> currentItems = page == 1 ? [] : state.items;
-
-      state = state.copyWith(
-        isLoading: false,
-        items: [...currentItems, ...response.data],
-        currentPage: response.meta.currentPage,
-        lastPage: response.meta.lastPage,
-      );
-      _updateStatuses();
-    } catch (e) {
-      print("Error fetching repositories: $e");
-      state = state.copyWith(isLoading: false, isError: true);
+    final externalItems = <RepositoryItem>[];
+    if (page == 1) {
+      for (final source in await StoreSourceService.load()) {
+        try {
+          final external = await _apiService.getRepositories(
+            sourceUrl: source.url,
+            sourceName: source.name,
+          );
+          externalItems.addAll(external.data);
+        } catch (_) {}
+      }
     }
+    RepositoryListResponse? jossResponse;
+    try {
+      jossResponse = await _apiService.getRepositories(page: page);
+    } catch (_) {}
+    final currentItems = page == 1 ? <RepositoryItem>[] : state.items;
+    final items = [...currentItems, ...?jossResponse?.data, ...externalItems];
+    state = state.copyWith(
+      isLoading: false,
+      isError: items.isEmpty && jossResponse == null,
+      items: items,
+      currentPage: jossResponse?.meta.currentPage ?? 1,
+      lastPage: jossResponse?.meta.lastPage ?? 1,
+    );
+    _updateStatuses();
   }
 
-  Future<void> installOrUpdateRepository(int repositoryId) async {
+  Future<void> installOrUpdateRepository(RepositoryItem item) async {
     try {
-      final status = state.itemStatuses[repositoryId];
-      final data = await _apiService.downloadRepository(repositoryId);
+      final status = state.itemStatuses[item.storeKey];
+      final data = await _apiService.downloadRepository(
+        item.id,
+        sourceUrl: item.sourceUrl,
+      );
       final jsonString = jsonEncode(data);
 
       if (status == RepositoryStatus.updateAvailable) {
         // Find local subject ID
         final subject = state.installedSubjects.firstWhere(
-          (s) => s.repositoryId == repositoryId,
+          (s) =>
+              s.repositoryId == item.id &&
+              s.repositorySource ==
+                  (item.sourceUrl.isEmpty ? 'joss-red' : item.sourceUrl),
         );
         await _studyRepository.updateSubjectFromJson(subject.id!, jsonString);
       } else {
         await _studyRepository.importSubjectFromJson(
           jsonString,
-          repositoryId: repositoryId,
+          repositoryId: item.id,
+          repositorySource: item.sourceUrl.isEmpty
+              ? 'joss-red'
+              : item.sourceUrl,
         );
       }
     } catch (e) {

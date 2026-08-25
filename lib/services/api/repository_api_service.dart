@@ -44,8 +44,11 @@ class RepositoryApiService {
   Future<RepositoryListResponse> getRepositories({
     int page = 1,
     String? token,
+    String? sourceUrl,
+    String sourceName = 'Joss Red',
   }) async {
     try {
+      final external = sourceUrl != null && sourceUrl.isNotEmpty;
       final activeToken = (token != null && token.isNotEmpty)
           ? token
           : ((_userToken != null && _userToken!.isNotEmpty)
@@ -56,17 +59,22 @@ class RepositoryApiService {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          if (activeToken != null && activeToken.isNotEmpty)
+          if (!external && activeToken != null && activeToken.isNotEmpty)
             'Authorization': 'Bearer $activeToken',
         },
       );
 
-      final response = await _dio.get(
-        '/repositories',
+      final root = external ? sourceUrl.replaceFirst(RegExp(r'/$'), '') : '';
+      final response = await (external ? Dio() : _dio).get(
+        external ? '$root/repositories' : '/repositories',
         queryParameters: {'page': page},
         options: options,
       );
-      return RepositoryListResponse.fromJson(response.data);
+      return RepositoryListResponse.fromJson(
+        response.data,
+        sourceName: sourceName,
+        sourceUrl: sourceUrl ?? '',
+      );
     } catch (e) {
       throw Exception('Failed to load repositories: $e');
     }
@@ -75,8 +83,10 @@ class RepositoryApiService {
   Future<Map<String, dynamic>> downloadRepository(
     int id, {
     String? token,
+    String? sourceUrl,
   }) async {
     try {
+      final external = sourceUrl != null && sourceUrl.isNotEmpty;
       final activeToken = (token != null && token.isNotEmpty)
           ? token
           : ((_userToken != null && _userToken!.isNotEmpty)
@@ -87,13 +97,16 @@ class RepositoryApiService {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          if (activeToken != null && activeToken.isNotEmpty)
+          if (!external && activeToken != null && activeToken.isNotEmpty)
             'Authorization': 'Bearer $activeToken',
         },
       );
 
-      final response = await _dio.get(
-        '/repositories/$id/download',
+      final root = external ? sourceUrl.replaceFirst(RegExp(r'/$'), '') : '';
+      final response = await (external ? Dio() : _dio).get(
+        external
+            ? '$root/repositories/$id/download'
+            : '/repositories/$id/download',
         options: options,
       );
       return response.data as Map<String, dynamic>;

@@ -4,6 +4,8 @@ abstract class IStudyRepository {
   Stream<List<Subject>> getAllSubjects();
   Stream<List<Module>> getModulesForSubject(int subjectId);
   Stream<List<Submodule>> getSubmodulesForModule(int moduleId);
+  Stream<List<ContentNode>> getRootNodesForSubject(int subjectId);
+  Stream<List<ContentNode>> getChildrenForNode(int nodeId);
   Future<List<Question>> getOrCreateQuestionsForModule(int moduleId);
   Stream<List<TestAttemptWithModule>> getCompletedTests();
   Stream<List<TestAttemptWithModule>> getPendingTests();
@@ -17,7 +19,11 @@ abstract class IStudyRepository {
   Future<Module?> getModuleById(int moduleId);
   Future<List<Question>> getOriginalQuestionsForModule(int moduleId);
   Future<void> forceRegenerateQuestions(int moduleId);
-  Future<void> importSubjectFromJson(String jsonString, {int? repositoryId});
+  Future<void> importSubjectFromJson(
+    String jsonString, {
+    int? repositoryId,
+    String repositorySource = 'joss-red',
+  });
   Future<void> deleteSubject(int subjectId);
   Future<void> updateSubjectFromJson(int subjectId, String jsonString);
   Future<void> checkForUpdates();

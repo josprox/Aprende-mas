@@ -4,7 +4,7 @@ import 'package:path_provider/path_provider.dart';
 
 class DatabaseHelper {
   static const _databaseName = "aprende_mas.db";
-  static const _databaseVersion = 2;
+  static const _databaseVersion = 4;
 
   // Singleton pattern
   DatabaseHelper._privateConstructor();
@@ -35,7 +35,8 @@ class DatabaseHelper {
         name TEXT NOT NULL,
         author TEXT NOT NULL DEFAULT 'Desconocido',
         version TEXT NOT NULL DEFAULT '1.0',
-        repository_id INTEGER DEFAULT NULL
+        repository_id INTEGER DEFAULT NULL,
+        repository_source TEXT NOT NULL DEFAULT 'joss-red'
       )
     ''');
 
@@ -55,6 +56,21 @@ class DatabaseHelper {
         module_id INTEGER NOT NULL,
         title TEXT NOT NULL,
         content_md TEXT NOT NULL,
+        FOREIGN KEY (module_id) REFERENCES modules (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE content_nodes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        subject_id INTEGER NOT NULL,
+        parent_id INTEGER,
+        module_id INTEGER,
+        title TEXT NOT NULL,
+        content_md TEXT NOT NULL DEFAULT '',
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (subject_id) REFERENCES subjects (id) ON DELETE CASCADE,
+        FOREIGN KEY (parent_id) REFERENCES content_nodes (id) ON DELETE CASCADE,
         FOREIGN KEY (module_id) REFERENCES modules (id) ON DELETE CASCADE
       )
     ''');
@@ -106,6 +122,44 @@ class DatabaseHelper {
     if (oldVersion < 2) {
       await db.execute(
         'ALTER TABLE subjects ADD COLUMN repository_id INTEGER DEFAULT NULL',
+      );
+    }
+    if (oldVersion < 3) {
+      await db.execute('''CREATE TABLE content_nodes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, subject_id INTEGER NOT NULL,
+        parent_id INTEGER, module_id INTEGER, title TEXT NOT NULL,
+        content_md TEXT NOT NULL DEFAULT '', sort_order INTEGER NOT NULL DEFAULT 0
+      )''');
+      final modules = await db.query('modules');
+      for (final module in modules) {
+        final moduleId = module['id'] as int;
+        final subjectId = module['subject_id'] as int;
+        final rootId = await db.insert('content_nodes', {
+          'subject_id': subjectId,
+          'module_id': moduleId,
+          'title': module['title'],
+          'sort_order': moduleId,
+        });
+        final lessons = await db.query(
+          'submodules',
+          where: 'module_id = ?',
+          whereArgs: [moduleId],
+        );
+        for (var index = 0; index < lessons.length; index++) {
+          await db.insert('content_nodes', {
+            'subject_id': subjectId,
+            'parent_id': rootId,
+            'module_id': moduleId,
+            'title': lessons[index]['title'],
+            'content_md': lessons[index]['content_md'],
+            'sort_order': index,
+          });
+        }
+      }
+    }
+    if (oldVersion < 4) {
+      await db.execute(
+        "ALTER TABLE subjects ADD COLUMN repository_source TEXT NOT NULL DEFAULT 'joss-red'",
       );
     }
   }

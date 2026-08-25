@@ -4,6 +4,7 @@ class Subject {
   final String author;
   final String version;
   final int? repositoryId;
+  final String repositorySource;
 
   Subject({
     this.id,
@@ -11,6 +12,7 @@ class Subject {
     required this.author,
     required this.version,
     this.repositoryId,
+    this.repositorySource = 'joss-red',
   });
 
   factory Subject.fromMap(Map<String, dynamic> map) {
@@ -20,6 +22,7 @@ class Subject {
       author: map['author'],
       version: map['version'],
       repositoryId: map['repository_id'],
+      repositorySource: map['repository_source']?.toString() ?? 'joss-red',
     );
   }
 
@@ -30,6 +33,7 @@ class Subject {
       'author': author,
       'version': version,
       'repository_id': repositoryId,
+      'repository_source': repositorySource,
     };
   }
 }
@@ -96,6 +100,36 @@ class Submodule {
       'content_md': contentMd,
     };
   }
+}
+
+class ContentNode {
+  final int id;
+  final int subjectId;
+  final int? parentId;
+  final int? moduleId;
+  final String title;
+  final String contentMd;
+  final int sortOrder;
+
+  const ContentNode({
+    required this.id,
+    required this.subjectId,
+    this.parentId,
+    this.moduleId,
+    required this.title,
+    required this.contentMd,
+    required this.sortOrder,
+  });
+
+  factory ContentNode.fromMap(Map<String, dynamic> map) => ContentNode(
+    id: map['id'] as int,
+    subjectId: map['subject_id'] as int,
+    parentId: map['parent_id'] as int?,
+    moduleId: map['module_id'] as int?,
+    title: map['title'] as String,
+    contentMd: map['content_md'] as String? ?? '',
+    sortOrder: map['sort_order'] as int? ?? 0,
+  );
 }
 
 class Question {

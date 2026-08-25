@@ -77,14 +77,14 @@ class LegalInfoScreen extends StatelessWidget {
                   children: [
                     const TextSpan(text: "Soporte: "),
                     TextSpan(
-                      text: "josprox.com/soporte/",
+                      text: "https://joss.red/support",
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w900,
                       ),
                       recognizer: TapGestureRecognizer()
                         ..onTap = () async {
-                          final uri = Uri.parse("https://josprox.com/soporte/");
+                          final uri = Uri.parse("https://https://joss.red/support");
                           if (await canLaunchUrl(uri)) {
                             await launchUrl(uri);
                           }

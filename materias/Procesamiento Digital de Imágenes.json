@@ -1,0 +1,227 @@
+{
+  "schemaVersion": 2,
+  "name": "Procesamiento Digital de Imágenes",
+  "author": "Melchor Estrada José Luis",
+  "version": "1.4",
+  "modules": [
+    {
+      "title": "Fundamentos del PDI",
+      "shortDescription": "Introducción a los conceptos básicos, representación digital de imágenes y modelos de color.",
+      "children": [
+        {
+          "title": "¿Qué es una imagen digital?",
+          "contentMd": "### Definición de Imagen Digital\nUna **imagen digital** se define como una función bidimensional **f(x,y)** donde **x** e **y** son coordenadas espaciales que representan la posición en el plano de la imagen, y **f(x,y)** es la **intensidad** o nivel de gris/color en ese punto específico.\n\n### Características Fundamentales:\n- **Representación matricial:** Una imagen es esencialmente una matriz donde cada elemento corresponde a un píxel.\n- **Señal discreta:** Tiene valores finitos para cada coordenada (x,y).\n- **Base del PDI:** El procesamiento digital de imágenes involucra técnicas, algoritmos y procesos matemáticos implementados por computadora para descubrir, resaltar, extraer y modificar la información contenida en estas matrices.",
+          "children": []
+        },
+        {
+          "title": "Píxeles y Resolución",
+          "contentMd": "### El Píxel: Unidad Básica\nEl **píxel** (Picture Element) es el elemento geométrico más pequeño de una imagen digital. Cada píxel tiene:\n- Una **ubicación espacial** específica (coordenadas x,y).\n- Un **valor de intensidad** particular.\n\n### Resolución de Imagen\nLa **resolución** se refiere a la cantidad total de píxeles que componen una imagen, expresada típicamente como:\n- **Ancho × Alto** (ej: 1920 × 1080 píxeles)\n\n### Profundidad de Bits\nLa **profundidad de bits** determina cuántos niveles de intensidad puede representar un píxel:\n- **1 bit:** 2 niveles (blanco y negro puro)\n- **8 bits:** 256 niveles de gris (0 = negro, 255 = blanco)\n- **24 bits:** Color \"verdadero\" (8 bits por canal RGB = 16.7 millones de colores)",
+          "children": []
+        },
+        {
+          "title": "Modelos de Color",
+          "contentMd": "### Modelo RGB (Aditivo)\nEl modelo **RGB** es el más utilizado en dispositivos electrónicos y se basa en tres colores primarios:\n- **Red (Rojo), Green (Verde), Blue (Azul)**\n- Cada color se representa con 8 bits (0-255)\n- Combinaciones: **256³ = 16,777,216 colores posibles**\n- Es un modelo **aditivo**: la suma de todos los colores produce blanco\n\n### Modelo CMYK (Sustractivo)\nUtilizado principalmente en impresión, con cuatro componentes:\n- **Cyan, Magenta, Yellow, Black (Key)**\n- Técnica **sustractiva** para conseguir colores\n- Conversión necesaria de RGB a CMYK para impresión\n\n### Modelo HSV/HSB\nOrganiza los colores según percepción humana:\n- **Hue (Matiz):** El pigmento del color (0°-360°)\n- **Saturation (Saturación):** Intensidad del color (0%-100%)\n- **Value/Brightness (Valor/Brillo):** Cantidad de blanco (0%-100%)",
+          "children": []
+        },
+        {
+          "title": "Formatos de Imagen",
+          "contentMd": "### Formatos Comunes y sus Características\n\n| Formato | Nombre Completo | Características Principales |\n|---------|-----------------|-----------------------------|\n| **GIF** | Graphics Interchange Format | Limitado a 256 colores (8 bits), compresión sin pérdida, soporta animación |\n| **JPEG** | Joint Photographic Experts Group | Compresión con pérdida, formato más común para fotografías |\n| **BMP** | Bit Map Picture | Formato básico, generalmente compresión sin pérdida |\n| **PNG** | Portable Network Graphics | Compresión sin pérdida, diseñado para reemplazar GIF, soporta transparencia |\n| **TIFF** | Tagged Image File Format | Formato flexible y adaptable, variantes comprimidas y sin comprimir |\n\n### Tipos de Datos de Imagen\n- **uint8:** Enteros de 8 bits [0,255] (1 byte por elemento)\n- **uint16:** Enteros de 16 bits [0,65,535] (2 bytes por elemento)\n- **double:** Números en punto flotante de doble precisión\n- **logical:** Valores binarios 0 ó 1 (1 bit por elemento)",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Operaciones con Imágenes",
+      "shortDescription": "Técnicas fundamentales para manipulación y procesamiento de imágenes a nivel de píxel y grupos de píxeles.",
+      "children": [
+        {
+          "title": "Operaciones Puntuales",
+          "contentMd": "### Definición y Características\nLas **operaciones puntuales** modifican el valor de intensidad de cada píxel de forma independiente, sin considerar los píxeles vecinos. Estas operaciones afectan principalmente el **brillo** y cuando se combinan, permiten manipular el **contraste**.\n\n### Operaciones Básicas:\n- **Suma:** Aumenta el brillo de la imagen\n- **Resta:** Disminuye el brillo\n- **Multiplicación:** Modifica el contraste\n- **División:** Ajusta niveles de intensidad\n- **Potencia:** Transformaciones no lineales\n- **Negativo:** Invierte los valores de intensidad\n\n### Consideraciones Importantes:\n- Para imágenes **uint8**, los valores se limitan al rango [0,255]\n- Valores >255 se ajustan a 255, valores <0 se ajustan a 0\n- En imágenes RGB, las operaciones pueden aplicarse por canal separado",
+          "children": []
+        },
+        {
+          "title": "Convolución 2D y Kernels",
+          "contentMd": "### Definición de Convolución 2D\nLa **convolución 2D** es el proceso fundamental mediante el cual se mezcla una imagen (matriz de píxeles) con un **kernel** o **máscara** (matriz más pequeña) para producir una nueva imagen con características mejoradas o transformadas.\n\n### Propósito:\n- Realzar o suprimir características específicas de la imagen.\n- Realizar operaciones como suavizado, detección de bordes, enfoque, etc.\n\n### Proceso:\n1. El kernel se desliza sobre toda la imagen.\n2. En cada posición, se multiplican los valores del kernel con los píxeles subyacentes de la imagen.\n3. Se suman todos los productos para generar un nuevo valor de píxel en la imagen de salida.\n\n### Tipos Comunes de Kernels:\n- **Identidad:** No modifica la imagen.\n- **Suavizado (Promedio):** Promedia los valores vecinos.\n- **Enfoque (Sharpen):** Realza los bordes.\n- **Detección de bordes (Sobel, Prewitt, Roberts):** Resalta cambios abruptos de intensidad.\n- **Emboss:** Crea efecto de relieve.\n\n### Implementación en MATLAB:\nLa función `imfilter` o la convolución directa con `conv2` permiten aplicar kernels a imágenes.",
+          "children": []
+        },
+        {
+          "title": "Filtros Espaciales: Suavizado y Realce",
+          "contentMd": "### Clasificación de Filtros Espaciales\nLos filtros espaciales se clasifican en **lineales** y **no lineales**, y según las frecuencias que afectan: **paso bajo**, **paso alto** y **pasa banda**.\n\n#### Filtros de Suavizado (Paso Bajo)\n**Propósito:** Difuminar la imagen, reducir ruido y suavizar transiciones bruscas.\n\n**Filtro de Promedio (Media):**\n- **Función:** Reemplaza cada píxel por el promedio de su vecindad.\n- **Efecto:** Reduce el ruido pero también la nitidez.\n- **En MATLAB:** `fspecial('average', hsize)` para crear el kernel.\n\n**Filtro Gaussiano:**\n- **Función:** Usa una distribución gaussiana para ponderar los píxeles vecinos.\n- **Efecto:** Suavizado más natural que el promedio, preserva mejor los bordes.\n- **En MATLAB:** `fspecial('gaussian', hsize, sigma)`.\n\n#### Filtros de Realce (Paso Alto)\n**Propósito:** Destacar bordes y detalles finos, aumentar la nitidez.\n\n**Filtro Laplaciano:**\n- **Función:** Aproxima la segunda derivada de la imagen, resaltando regiones de cambio rápido en intensidad.\n- **Efecto:** Realza bordes y detalles, pero puede amplificar el ruido.\n- **En MATLAB:** `fspecial('laplacian', alpha)`.\n\n**Filtro de Enfoque (Sharpen):**\n- **Función:** Creado a menudo restando una versión suavizada de la imagen a la original (realce de alta frecuencia).\n- **Efecto:** Mejora la nitidez percibida.\n\n### Implementación Práctica:\nLa función `fspecial` en MATLAB genera kernels predefinidos, y `imfilter` los aplica. Para realce completo, a menudo se suma la imagen original con la imagen filtrada (detalles).",
+          "children": []
+        },
+        {
+          "title": "Filtros Diferenciales para Detección de Bordes",
+          "contentMd": "### Fundamentos\nLos filtros diferenciales detectan bordes calculando aproximaciones de las **derivadas** de la imagen. Los bordes corresponden a cambios bruscos en la intensidad, que se manifiestan como picos en la primera derivada o cruces por cero en la segunda derivada.\n\n#### Filtro de Sobel\n- **Kernels:** Utiliza dos kernels separados para derivadas horizontales (Gx) y verticales (Gy).\n- **Magnitud del gradiente:** `|G| = sqrt(Gx² + Gy²)`.\n- **Dirección del gradiente:** `θ = arctan(Gy / Gx)`.\n- **En MATLAB:** `fspecial('sobel')` y la función `edge(I, 'Sobel')`.\n\n#### Filtro de Prewitt\n- Similar a Sobel pero con kernels más simples.\n- **En MATLAB:** `fspecial('prewitt')` y `edge(I, 'Prewitt')`.\n\n#### Filtro de Roberts\n- **Kernels:** Usa kernels 2x2 para derivadas en diagonales.\n- Muy sensible al ruido pero preciso para bordes agudos.\n- **En MATLAB:** `edge(I, 'Roberts')`.\n\n#### Detector de Canny\n- **Algoritmo avanzado:** Multi-etapa (suavizado gaussiano, cálculo de gradiente, supresión de no máximos, umbralización con histéresis).\n- **Ventajas:** Buen rendimiento, baja tasa de error, buena localización.\n- **En MATLAB:** `edge(I, 'Canny')`.\n\n### Parámetros en la Función `edge` de MATLAB\n- `method`: 'Sobel' (default), 'Prewitt', 'Roberts', 'log', 'zerocross', 'Canny', 'approxcanny'.\n- `threshold`: Umbral para ignorar bordes débiles.\n- `direction`: 'both', 'horizontal', 'vertical' (para Sobel, Prewitt).\n- `sigma`: Desviación estándar para filtro gaussiano (en 'log' y 'Canny').",
+          "children": []
+        },
+        {
+          "title": "Operaciones Morfológicas",
+          "contentMd": "### Fundamentos de Morfología Matemática\nLa **morfología matemática** es un enfoque geométrico-algebraico para el procesamiento de imágenes digitales basado en conjuntos y funciones. Transforma imágenes mediante **elementos estructurantes** para preservar formas esenciales y facilitar el análisis.\n\n### Operaciones Fundamentales:\n\n**Dilatación (⊕):**\n- **Definición:** Combina dos conjuntos mediante suma vectorial. La dilatación de una imagen X por un elemento estructural B es el conjunto de todas las sumas vectoriales posibles entre elementos de X y B.\n- **Efecto:** Expande los objetos, rellena pequeños agujeros y suaviza los contornos.\n- **Fórmula:** `X ⊕ B = {d ∈ E²: d = x + b para cada x ∈ X y b ∈ B}`\n- **En MATLAB:** `imdilate(im, SE)` donde `SE` es el elemento estructurante.\n\n**Erosión (⊗):**\n- **Definición:** Dual de la dilatación. La erosión de X por B es el conjunto de puntos donde B trasladado está completamente contenido en X.\n- **Efecto:** Reduce el tamaño de los objetos, elimina detalles pequeños y separa objetos conectados.\n- **Fórmula:** `X ⊗ B = {d ∈ E²: d + b ∈ X para cada b ∈ B}`\n- **En MATLAB:** `imerode(im, SE)`.\n\n**Apertura (X ∘ B):**\n- **Definición:** Erosión seguida de dilatación: `(X ⊗ B) ⊕ B`.\n- **Efecto:** Suaviza contornos, elimina pequeños objetos y rompe conexiones estrechas.\n\n**Cierre (X • B):**\n- **Definición:** Dilatación seguida de erosión: `(X ⊕ B) ⊗ B`.\n- **Efecto:** Cierra pequeños agujeros, une objetos cercanos y suaviza contornos.\n\n### Aplicaciones Avanzadas:\n- **Obtención de perímetro:** `bwperim(BW)` en MATLAB devuelve los píxeles perimetrales.\n- **Esqueletización:** `bwskel(A)` reduce objetos a líneas de 1 píxel de ancho preservando la topología y el número de Euler.\n- **Número de Euler:** Característica topológica que cuenta objetos menos agujeros.\n\n### Elementos Estructurales:\n- Matrices o vectores de 1 y 0 para imágenes binarias.\n- Pueden tener cualquier tamaño y forma.\n- La elección del elemento estructurante determina el efecto de la operación morfológica.",
+          "children": []
+        },
+        {
+          "title": "Etiquetado de Componentes Conexos",
+          "contentMd": "### Definición y Propósito\nEl **etiquetado de componentes conexos** es una operación que asigna una etiqueta única a todos los píxeles conectados que pertenecen al mismo objeto en una imagen binaria. Esto permite separar objetos, contarlos y extraer propiedades individuales (área, centroide, perímetro).\n\n### Conectividad\n- **4-conectividad:** Un píxel se considera conectado a sus vecinos arriba, abajo, izquierda y derecha.\n- **8-conectividad:** Incluye también los vecinos diagonales. Esta es la conectividad por defecto en muchas funciones.\n\n### Algoritmo Básico\n1. Recorrer la imagen de izquierda a derecha y de arriba a abajo.\n2. Para cada píxel de primer plano (valor 1):\n   - Si no tiene vecinos etiquetados, asignar una nueva etiqueta.\n   - Si tiene vecinos etiquetados, asignar la etiqueta mínima entre ellos.\n   - Registrar equivalencias si vecinos tienen etiquetas diferentes.\n3. Resolver equivalencias y reetiquetar.\n\n### Funciones en MATLAB\n- **`bwlabel`:** `L = bwlabel(BW, conn)` devuelve una matriz de etiquetas `L` y opcionalmente el número de objetos `n`.\n- **`bwboundaries`:** `B = bwboundaries(BW, conn, 'holes')` traza los límites de los objetos y agujeros, devolviendo un arreglo de celdas con coordenadas de los bordes.\n- **Visualización:** Se puede superponer los bordes detectados sobre la imagen original.\n\n### Aplicaciones\n- Conteo de objetos.\n- Extracción de características por objeto (área, forma).\n- Segmentación y análisis morfológico posterior.",
+          "children": []
+        },
+        {
+          "title": "Operaciones Globales",
+          "contentMd": "### Procesamiento de Imagen Completa\nLas **operaciones globales** consideran el valor de **todos los píxeles** de la imagen para realizar transformaciones. Cada píxel se ve afectado por la información global de la imagen completa.\n\n### Aplicaciones Principales:\n- **Ajuste de histograma:** Manipulación del contraste global\n- **Filtrado en dominio de frecuencia:** Transformadas (Fourier, Wavelet)\n- **Reconocimiento de patrones:** Detección de líneas, círculos, formas\n- **Segmentación:** Separación de objetos basada en características globales\n\n### Ventajas:\n- Mejora significativa del contraste\n- Reducción efectiva de ruido\n- Extracción de características estructurales complejas",
+          "children": []
+        },
+        {
+          "title": "Operaciones Lógicas y Morfológicas (resumen)",
+          "contentMd": "### Operaciones Lógicas\nBasadas en álgebra booleana, trabajan con imágenes binarias (valores 0 ó 1):\n\n**Operaciones Básicas:**\n- **AND:** Intersección de regiones\n- **OR:** Unión de regiones\n- **NOT:** Complemento/inversión\n- **XOR:** Diferencia entre regiones\n\n**Aplicaciones:**\n- Segmentación de objetos\n- Extracción de bordes\n- Creación de máscaras binarias\n\n### Operaciones Morfológicas (resumen)\nTransforman imágenes usando **elementos estructurantes** para preservar formas esenciales:\n\n**Operaciones Fundamentales:**\n- **Erosión:** Elimina píxeles en los bordes de los objetos\n- **Dilatación:** Añade píxeles a los bordes de los objetos\n- **Apertura:** Erosión seguida de dilatación (elimina ruido)\n- **Cierre:** Dilatación seguida de erosión (rellena huecos)\n\n**Aplicaciones:**\n- Extracción de bordes\n- Adelgazado de objetos\n- Mejoramiento de detalles estructurales\n- Filtrado morfológico",
+          "children": []
+        },
+        {
+          "title": "Operaciones entre Imágenes",
+          "contentMd": "### Fusión y Combinación\nLas **operaciones entre imágenes** permiten combinar dos o más imágenes para crear resultados específicos. Es **crítico** que las imágenes tengan las **mismas dimensiones**.\n\n### Operaciones Principales:\n\n**Suma de Imágenes:**\n- **Aplicación:** Fusión de imágenes, mejoramiento de detalles\n- **Ejemplo:** Combinar múltiples exposiciones\n\n**Resta de Imágenes:**\n- **Aplicación:** Detección de movimiento, extracción de objetos\n- **Ejemplo:** Comparar frames consecutivos en video\n\n**Multiplicación/División:**\n- **Aplicación:** Fusión controlada, corrección de iluminación\n- **Nota:** Puede requerir normalización (multiplicar/dividir por 255)\n\n**Operaciones Lógicas entre Imágenes:**\n- **Aplicación:** Extracción de bordes, creación de máscaras compuestas\n- **Ejemplo:** Combinar segmentaciones de diferentes métodos",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Procesamiento de Histogramas",
+      "shortDescription": "Técnicas para análisis y ajuste de histogramas para mejorar contraste y calidad visual de imágenes.",
+      "children": [
+        {
+          "title": "Fundamentos del Histograma",
+          "contentMd": "### ¿Qué es un Histograma?\nUn **histograma de imagen** es una representación gráfica que muestra la distribución de los niveles de intensidad en una imagen. Especifica:\n- **Eje X:** Niveles de intensidad **lₖ** en el rango [0, L-1]\n- **Eje Y:** Número de píxeles **nₖ** para cada nivel de intensidad\n\n### Propiedades Clave:\n- **No es único:** Diferentes imágenes pueden tener el mismo histograma\n- **Información global:** Representa características de toda la imagen\n- **Base para mejoramiento:** Permite diagnosticar problemas de contraste\n\n### Interpretación Básica:\n- **Imagen oscura:** Histograma concentrado hacia la izquierda\n- **Imagen clara:** Histograma concentrado hacia la derecha\n- **Bajo contraste:** Histograma comprimido en rango estrecho\n- **Alto contraste:** Histograma expandido en todo el rango",
+          "children": []
+        },
+        {
+          "title": "Ecualización de Histograma",
+          "contentMd": "### Mejoramiento Automático de Contraste\nLa **ecualización de histograma** es una técnica que redistribuye los valores de intensidad para aproximar una distribución uniforme, mejorando automáticamente el contraste de la imagen.\n\n### Objetivo Principal:\nObtener una distribución de probabilidades \"uniforme\" de los niveles de gris en toda la imagen, expandiendo el **rango dinámico** (diferencia entre intensidad máxima y mínima).\n\n### Proceso:\n1. Calcular el histograma acumulativo de la imagen original\n2. Aplicar transformación para distribuir uniformemente las intensidades\n3. Mapear los valores originales a los nuevos valores ecualizados\n\n### Resultados:\n- Mejor visualización de detalles en zonas oscuras y claras\n- Distribución más balanceada de intensidades\n- Mejora significativa del contraste global",
+          "children": []
+        },
+        {
+          "title": "Ajuste Lineal (Stretching)",
+          "contentMd": "### Expansión Controlada del Rango\nEl **ajuste lineal de histograma** (stretching) expande el rango de intensidades para ocupar todo el espectro disponible [0,255].\n\n### Fórmula Fundamental:\n```\nI' = (I - a) * (255 / (b - a))\n```\nDonde:\n- **I'**: Nuevo valor de intensidad\n- **I**: Valor de intensidad original\n- **a**: Valor mínimo de intensidad en la imagen original\n- **b**: Valor máximo de intensidad en la imagen original\n\n### Características:\n- **Distribución uniforme** de intensidades\n- **Amplificación proporcional** de todo el rango\n- **Preserva relaciones** entre niveles de intensidad\n- **No crea nuevos niveles** de intensidad, solo redistribuye los existentes",
+          "children": []
+        },
+        {
+          "title": "Modelos No Lineales de Ajuste",
+          "contentMd": "### Transformaciones No Lineales\nAdemás del ajuste lineal, existen varios modelos no lineales que permiten control específico sobre diferentes regiones del histograma.\n\n### Modelo Parabólico (Cuadrático):\n```\nI' = 255 * ((I - a) / (b - a))²\n```\n**Características:**\n- Realza detalles en zonas oscuras (valores cercanos a a)\n- Comprime información en zonas brillantes\n- Efecto de \"oscurecimiento\" de medios tonos\n\n### Modelo de Raíz Cuadrada:\n```\nI' = 255 * ((I - a) / (b - a))^(1/2)\n```\n**Características:**\n- Efecto inverso al modelo parabólico\n- Realza detalles en zonas brillantes (valores cercanos a b)\n- Comprime información en zonas oscuras\n- Efecto de \"aclarado\" de medios tonos\n\n### Modelo Logarítmico:\n```\nI' = k * ln(1 + I - a)\nk = 255 / ln(1 + b - a)\n```\n**Características:**\n- Alto contraste en zonas oscuras\n- Bajo contraste en zonas brillantes\n- Ideal para imágenes con gran rango dinámico\n- Útil para compresión de rango en imágenes HDR",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Transformaciones Geométricas",
+      "shortDescription": "Técnicas para modificar la geometría y posición de imágenes mediante transformaciones espaciales.",
+      "children": [
+        {
+          "title": "Métodos de Interpolación",
+          "contentMd": "### Asignación de Valores en Transformaciones\nLa **interpolación** es fundamental en transformaciones geométricas para asignar valores a los nuevos píxeles creados durante la transformación.\n\n### Interpolación del Vecino Más Cercano:\n- **Método más simple y rápido**\n- Asigna el valor del píxel más cercano\n- **Resultado:** Imágenes con efecto de \"bloques\" o pixelado\n- **Ventaja:** Bajo costo computacional\n\n### Interpolación Bilineal:\n- Considera los **4 píxeles más cercanos** (vecindad 2×2)\n- Calcula promedio ponderado basado en distancias\n- **Resultado:** Imágenes más suaves que vecino más cercano\n- **Desventaja:** Mayor tiempo de procesamiento\n\n### Interpolación Bicúbica:\n- Considera los **16 píxeles más cercanos** (vecindad 4×4)\n- Asigna mayor peso a píxeles más cercanos\n- **Resultado:** Imágenes más nítidas y de mejor calidad\n- **Aplicación:** Estándar en software profesional y drivers",
+          "children": []
+        },
+        {
+          "title": "Transformaciones Básicas",
+          "contentMd": "### Operaciones Geométricas Fundamentales\nLas **transformaciones geométricas** modifican la posición espacial de los píxeles manteniendo sus valores de intensidad.\n\n### Translación (Desplazamiento):\n```\n[x']   [x]   [dₓ]\n[y'] = [y] + [d_y]\n```\n- **Aplicación:** Alineamiento de imágenes, composición\n- **Parámetros:** Vector de desplazamiento (dₓ, d_y)\n\n### Escalamiento:\n```\n[x']   [Sₓ  0 ] [x]\n[y'] = [ 0  S_y] [y]\n```\n- **Aplicación:** Redimensionamiento, zoom digital\n- **Parámetros:** Factores de escala Sₓ (ancho), S_y (alto)\n\n### Rotación:\n```\n[x']   [cos(α)  sen(α)] [x]\n[y'] = [-sen(α) cos(α)] [y]\n```\n- **Aplicación:** Corrección de orientación, efectos visuales\n- **Parámetros:** Ángulo de rotación α (en radianes o grados)\n\n### Inclinación (Shearing):\n```\n[x']   [1   bₓ] [x]\n[y'] = [b_y  1] [y]\n```\n- **Aplicación:** Efectos de perspectiva, corrección de distorsión\n- **Parámetros:** Factores de inclinación bₓ, b_y",
+          "children": []
+        },
+        {
+          "title": "Implementación en Herramientas",
+          "contentMd": "### Funciones Específicas en MATLAB\n\n**Translación:**\n```matlab\n% Desplazamiento básico (mantiene tamaño)\nimg_desplazada = imtranslate(im, [filas, columnas]);\n\n% Desplazamiento con cambio de tamaño\nimg_desplazada = imtranslate(im, [filas, columnas], 'OutputView', 'full');\n```\n\n**Escalamiento:**\n```matlab\n% Escala por factor\nimg_escalada = imresize(im, escala);\n\n% Escala a dimensiones específicas\nimg_escalada = imresize(im, [filas columnas]);\n\n% Escala con método específico\nimg_escalada = imresize(im, escala, 'metodo');\n```\nMétodos disponibles: 'nearest', 'bilinear', 'bicubic'\n\n**Rotación:**\n```matlab\n% Rotación básica\nimg_rotada = imrotate(im, angulo);\n\n% Rotación con método y ajuste de tamaño\nimg_rotada = imrotate(im, angulo, 'metodo', 'bbox');\n```\nOpciones de bbox: 'crop' (mismo tamaño), 'loose' (ajusta tamaño)\n\n**Transformación Afín General:**\n```matlab\n% Crear transformación afín\ntform = affine2d([1 0 0; .5 1 0; 0 0 1]);\n\n% Aplicar transformación\nimg_transformada = imwarp(im, tform, 'metodo');\n```",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Ajuste Gamma y Corrección de Color",
+      "shortDescription": "Técnicas para corrección no lineal de contraste y ajuste de características visuales en imágenes.",
+      "children": [
+        {
+          "title": "Fundamentos del Ajuste Gamma",
+          "contentMd": "### Corrección No Lineal de Contraste\nLa **corrección gamma** es una técnica especial de aumento de contraste diseñada específicamente para mejorar el contraste en áreas muy claras o muy oscuras de una imagen.\n\n### Propósito Principal:\nModificar los valores medios de intensidad, particularmente los medios-bajos, **sin afectar** los valores extremos de blanco (255) y negro (0).\n\n### Aplicaciones:\n- **Mejoramiento visual:** Mejorar el aspecto subjetivo de imágenes\n- **Compensación de dispositivos:** Corregir diferencias entre pantallas, cámaras, scanners\n- **Preparación para visualización:** Optimizar imágenes para diferentes condiciones de iluminación\n\n### Contexto Histórico:\nOriginado para compensar la respuesta no lineal de los tubos de rayos catódicos en televisiones y monitores antiguos, pero sigue siendo relevante en displays modernos.",
+          "children": []
+        },
+        {
+          "title": "Función de Corrección Gamma",
+          "contentMd": "### Modelo Matemático\nLa corrección gamma se implementa mediante una función de potencia que actúa sobre cada píxel de forma individual.\n\n### Fórmula Fundamental:\n```\nI_N = 255 * (I₀ / 255)^(1/γ)\n```\nDonde:\n- **I_N**: Nuevo valor de intensidad (salida)\n- **I₀**: Valor de intensidad actual (entrada)\n- **γ**: Factor de ajuste gamma (gamma)\n\n### Aplicación a Color RGB:\nLa misma fórmula se aplica **independientemente** a cada canal de color (R, G, B) en imágenes a color, manteniendo las relaciones cromáticas.\n\n### Normalización:\nLa división por 255 normaliza los valores al rango [0,1] para el cálculo, y la multiplicación final devuelve los valores al rango [0,255].",
+          "children": []
+        },
+        {
+          "title": "Efectos del Factor Gamma",
+          "contentMd": "### Comportamiento Según el Valor de γ\n\n**γ = 1.0 (Sin Corrección):**\n- **No hay modificación** en la imagen\n- La función es lineal: I_N = I₀\n- La imagen mantiene sus características originales\n\n**γ > 1.0 (Gamma Alta):**\n- **Gran corrección** en valores bajos (oscuros)\n- **Pequeña corrección** en valores altos (claros)\n- **Resultado:** Aumento de brillo en tonos medios\n- **Efecto visual:** Imagen más \"clara\" o \"lavada\"\n- **Aplicación:** Corregir imágenes subexpuestas\n\n**γ < 1.0 (Gamma Baja):**\n- **Pequeña corrección** en valores bajos (oscuros)\n- **Gran corrección** en valores altos (claros)\n- **Resultado:** Disminución de brillo en tonos medios\n- **Efecto visual:** Imagen más \"oscura\" y contrastada\n- **Aplicación:** Corregir imágenes sobreexpuestas\n\n### Representación Gráfica:\nLa curva de respuesta muestra cómo diferentes valores de γ mapean los valores de entrada a los valores de salida, creciendo más rápido o más lento según el valor de gamma.",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "OCR - Reconocimiento Óptico de Caracteres",
+      "shortDescription": "Tecnologías y procesos para convertir imágenes de texto en texto digital editable y procesable.",
+      "children": [
+        {
+          "title": "Introducción al OCR",
+          "contentMd": "### Definición y Propósito\nEl **Reconocimiento Óptico de Caracteres (OCR)** es una tecnología que permite **convertir imágenes de texto** (impreso o manuscrito) en **texto digital editable** y procesable por computadora.\n\n### Proceso Fundamental:\nTransformar representaciones visuales de caracteres en representaciones digitales de texto (ASCII, Unicode) que pueden ser editadas, buscadas, almacenadas y procesadas.\n\n### Aplicaciones Comunes:\n- **Digitalización de documentos:** Conversión de PDF escaneados a texto editable\n- **Automatización de procesos:** Procesamiento automático de facturas, formularios\n- **Sistemas de transporte:** Lectura automática de matrículas vehiculares\n- **Traducción automática:** Conversión de texto en imágenes para traducción\n- **Accesibilidad:** Asistentes para personas con discapacidad visual\n- **Archivo y recuperación:** Indexación y búsqueda en documentos escaneados\n\n### Importancia en la Era Digital:\nPermite migrar contenido físico a formatos digitales, facilitando la búsqueda, edición y almacenamiento eficiente de información textual.",
+          "children": []
+        },
+        {
+          "title": "Proceso de OCR - Etapas",
+          "contentMd": "### Flujo de Procesamiento Completo\nEl proceso de OCR típicamente involucra cuatro etapas principales:\n\n### 1. Preprocesamiento:\nOptimización de la imagen para mejorar la precisión del reconocimiento:\n- **Binarización:** Conversión a blanco y negro mediante umbralización\n- **Filtrado:** Eliminación de ruido (manchas, sombras) usando filtros como Gaussian Blur o Median Blur\n- **Deskewing:** Corrección de inclinación del texto\n- **Segmentación:** Identificación de líneas y separación de caracteres individuales\n\n### 2. Extracción de Características:\nIdentificación de patrones distintivos en los caracteres:\n- **Análisis de contornos:** Detección de bordes de letras\n- **Redes Neuronales Convolucionales (CNN):** Extracción de características jerárquicas\n- **Proyecciones horizontales/verticales:** Separación de líneas y palabras\n\n### 3. Reconocimiento de Texto:\nInterpretación de los caracteres detectados:\n- **Plantillas (Template Matching):** Comparación con fuentes predefinidas\n- **Redes Neuronales Recurrentes (RNN/LSTM):** Ideales para texto secuencial y manuscrito\n- **Transformers:** Modelos modernos como Tesseract OCR (combinan CNN + LSTM)\n- **APIs en la nube:** Google Cloud Vision API con modelos avanzados\n\n### 4. Postprocesamiento:\nCorrección de errores y refinamiento del resultado:\n- **Diccionarios:** Corrección de palabras mal reconocidas\n- **Modelos de lenguaje:** Uso de contexto gramatical (BERT en sistemas avanzados)\n- **Verificación contextual:** Mejora basada en el significado del texto",
+          "children": []
+        },
+        {
+          "title": "Herramientas y Implementación",
+          "contentMd": "### Software y Bibliotecas Principales\n\n**Tesseract OCR:**\n- **Desarrollador:** Originalmente HP, ahora Google\n- **Características:** Código abierto, multiplataforma, soporte múltiples idiomas\n- **Instalación Windows:** Ejecutable disponible en GitHub\n- **Integración Python:** Biblioteca pytesseract\n\n**EasyOCR:**\n- **Ventajas:** Fácil implementación, buen rendimiento con texto en condiciones variables\n- **Características:** Basado en PyTorch, soporte múltiples idiomas\n\n**Google Cloud Vision API:**\n- **Ventajas:** Alta precisión, maneja texto manuscrito y condiciones complejas\n- **Consideración:** Servicio en la nube con costos asociados\n\n**OpenCV:**\n- **Función:** Preprocesamiento y segmentación de imágenes\n- **Complemento:** No es un motor OCR completo pero es esencial para preparación de imágenes\n\n### Implementación Básica con Python:\n```python\nimport cv2\nimport pytesseract\n\n# Configurar ruta de Tesseract (Windows)\npytesseract.pytesseract.tesseract_cmd = r\"ruta\\\\a\\\\tesseract.exe\"\n\n# Leer y procesar imagen\nimagen = cv2.imread(\"texto_en_imagen.png\")\ntexto = pytesseract.image_to_string(imagen)\nprint(texto)\n```\n\n### Desafíos Comunes:\n- **Texto manuscrito:** Alta variabilidad en escritura\n- **Fuentes artísticas o degradadas:** Patrones no estándar\n- **Idiomas complejos:** Caracteres chinos, árabes, etc.\n- **Condiciones de imagen:** Baja resolución, iluminación pobre, distorsiones",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Detección y Reconocimiento Facial",
+      "shortDescription": "Técnicas para localizar rostros en imágenes e identificar personas mediante características faciales.",
+      "children": [
+        {
+          "title": "Conceptos Fundamentales",
+          "contentMd": "### Diferenciación entre Detección y Reconocimiento\n\n**Detección Facial:**\n- **Objetivo:** Localizar y encuadrar rostros humanos en una imagen o video\n- **Resultado:** Coordenadas (x, y, ancho, alto) de regiones con rostros\n- **No identifica** quién es la persona, solo encuentra si hay caras presentes\n- **Ejemplo:** Cámara que dibuja recuadros sobre rostros detectados\n\n**Reconocimiento Facial:**\n- **Objetivo:** Identificar o verificar la identidad de una persona a partir de su rostro\n- **Proceso:** Comparación con base de datos de rostros conocidos\n- **Aplicaciones:** Desbloqueo facial, sistemas de vigilancia, control de acceso\n- **Ejemplo:** Sistema que dice \"Esta persona es Juan Pérez\"\n\n### Flujo de Procesamiento Típico:\n1. **Detección:** Encontrar todas las caras en la imagen\n2. **Preprocesamiento:** Normalización, alineación, corrección de iluminación\n3. **Extracción de características:** Obtención de rasgos faciales distintivos\n4. **Comparación:** Matching con base de datos (reconocimiento) o verificación",
+          "children": []
+        },
+        {
+          "title": "Algoritmos de Detección Facial",
+          "contentMd": "### Técnicas Clásicas y Modernas\n\n**Cascadas de Haar (Haar Cascades):**\n- **Desarrolladores:** Paul Viola y Michael Jones (2001)\n- **Base:** Características Haar - patrones blanco/negro que detectan bordes y texturas\n- **Características típicas:** Cejas sobre ojos, región bajo nariz, contraste mejillas-nariz\n- **Implementación:** OpenCV incluye clasificadores preentrenados\n- **Ventajas:** Rápido, eficiente para aplicaciones en tiempo real\n- **Limitaciones:** Menos robusto ante variaciones de pose e iluminación\n\n**HOG (Histogram of Oriented Gradients):**\n- **Enfoque:** Calcula orientación de bordes en celdas de la imagen\n- **Proceso:** Extrae histogramas de gradientes locales\n- **Clasificación:** Usa SVM (Máquinas de Vectores de Soporte) para distinguir rostros\n- **Ventajas:** Más robusto que Haar para algunas condiciones\n\n**Redes Neuronales Profundas (DNN):**\n- **Base:** Redes Neuronales Convolucionales (CNN)\n- **Enfoque:** Aprendizaje automático de características\n- **Ventajas:** Alta precisión, robustez ante variaciones\n- **Aplicaciones:** Sistemas modernos como FaceNet, DeepFace\n- **Requisitos:** Mayor poder computacional, grandes conjuntos de datos",
+          "children": []
+        },
+        {
+          "title": "Cascadas de Haar - Detalles Técnicos",
+          "contentMd": "### Funcionamiento Interno\n\n**Características Haar:**\n- Patrones visuales simples que capturan contrastes de intensidad\n- **Tipos:**\n  - **Edge Features:** Bordes (línea blanca sobre negra o viceversa)\n  - **Line Features:** Líneas\n  - **Four-rectangle features:** Patrones más complejos\n\n**Integral Image:**\n- Estructura de datos que permite calcular rápidamente la suma de píxeles en regiones rectangulares\n- **Ventaja:** Cálculo en tiempo constante independiente del tamaño de la región\n- **Fundamental** para la eficiencia del algoritmo\n\n**Algoritmo AdaBoost:**\n- **Función:** Seleccionar un subconjunto pequeño de características \"fuertes\" entre miles posibles\n- **Proceso:** Combina clasificadores simples (weak learners) con pesos apropiados\n- **Resultado:** Clasificador robusto y eficiente\n\n**Arquitectura en Cascada:**\n- **Concepto:** Serie de etapas de clasificación\n- **Funcionamiento:**\n  - Cada ventana de imagen pasa por múltiples etapas\n  - Si falla en cualquier etapa, se descarta inmediatamente\n  - Solo las ventanas que pasan todas las etapas se consideran rostros\n- **Ventaja:** Eficiencia computacional (rechaza rápidamente regiones no faciales)\n\n### Implementación con OpenCV:\n```python\nimport cv2\n\n# Cargar clasificador preentrenado\nface_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')\n\n# Detectar rostros\nrostros = face_cascade.detectMultiScale(imagen, scaleFactor=1.1, minNeighbors=5)\n\n# Dibujar rectángulos alrededor de rostros detectados\nfor (x, y, w, h) in rostros:\n    cv2.rectangle(imagen, (x, y), (x+w, y+h), (255, 0, 0), 2)\n```\n\n**Clasificadores disponibles:**\n- `haarcascade_frontalface_default.xml`\n- `haarcascade_frontalface_alt.xml`\n- `haarcascade_eye.xml`\n- `haarcascade_smile.xml`",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Redes Neuronales en Procesamiento de Imágenes",
+      "shortDescription": "Fundamentos de redes neuronales y su aplicación en tareas avanzadas de visión por computadora.",
+      "children": [
+        {
+          "title": "Introducción a las Redes Neuronales",
+          "contentMd": "### Inspiración Biológica\nUna **red neuronal** es un modelo computacional que intenta emular el funcionamiento de las redes de neuronas biológicas en organismos vivos.\n\n### Analogía Biológica:\n- **Neuronas biológicas:** Células interconectadas que procesan información\n- **Aprendizaje biológico:** Las conexiones se fortalecen con la experiencia\n- **Redes biológicas:** Procesamiento paralelo y distribuido\n\n### Componentes Fundamentales:\n- **Neurona artificial:** Unidad básica de procesamiento\n- **Conexiones sinápticas:** Pesos que modulan la señal\n- **Función de activación:** Determina la salida de la neurona\n- **Capas:** Organización jerárquica de neuronas\n\n### Ventajas Clave:\n- **Aprendizaje automático:** Capacidad de aprender patrones complejos\n- **Generalización:** Pueden reconocer patrones en datos no vistos\n- **Tolerancia a ruido:** Robustez ante imperfecciones en los datos\n- **Aplicación universal:** Útiles para múltiples tipos de problemas",
+          "children": []
+        },
+        {
+          "title": "Arquitectura de Redes Neuronales",
+          "contentMd": "### Componentes Estructurales\n\n**Capas de una Red Neuronal:**\n1. **Capa de Entrada (Input Layer):**\n   - Recibe los datos de entrada (ej: valores de píxeles)\n   - Número de neuronas = dimensión de los datos de entrada\n\n2. **Capas Ocultas (Hidden Layers):**\n   - Realizan el procesamiento intermedio\n   - Extraen y combinan características\n   - Pueden ser múltiples capas (redes profundas)\n\n3. **Capa de Salida (Output Layer):**\n   - Produce el resultado final\n   - Número de neuronas = número de clases o valores a predecir\n\n**Funciones de Activación:**\n- **Sigmoide:** `f(x) = 1 / (1 + e^(-x))` - Rango [0,1]\n- **Tanh (Tangente Hiperbólica):** `f(x) = tanh(x)` - Rango [-1,1]\n- **ReLU (Rectified Linear Unit):** `f(x) = max(0,x)` - Más eficiente computacionalmente\n- **Softmax:** Para clasificación multiclase, produce probabilidades\n\n**Proceso de Propagación:**\n1. **Forward Propagation:** Los datos fluyen desde entrada hacia salida\n2. **Cálculo de Error:** Comparación entre salida predicha y valor real\n3. **Backpropagation:** Ajuste de pesos basado en el error calculado\n4. **Optimización:** Minimización del error mediante algoritmos como Gradient Descent",
+          "children": []
+        },
+        {
+          "title": "Aplicaciones en Visión por Computadora",
+          "contentMd": "### Redes Neuronales Convolucionales (CNN)\n\n**Características Especializadas:**\n- **Convolución:** Aplicación de filtros para extraer características locales\n- **Pooling:** Reducción de dimensionalidad manteniendo características importantes\n- **Conectividad local:** Cada neurona se conecta solo a una región local de la capa anterior\n\n**Aplicaciones Principales:**\n\n**Clasificación de Imágenes:**\n- **Objetivo:** Asignar una etiqueta a toda la imagen\n- **Ejemplo:** Determinar si una imagen contiene un gato, perro, coche, etc.\n- **Arquitecturas famosas:** LeNet, AlexNet, VGG, ResNet\n\n**Detección de Objetos:**\n- **Objetivo:** Localizar y clasificar múltiples objetos en una imagen\n- **Resultado:** Coordenadas de bounding boxes + etiquetas de clase\n- **Algoritmos:** YOLO (You Only Look Once), SSD, Faster R-CNN\n\n**Segmentación Semántica:**\n- **Objetivo:** Asignar una etiqueta de clase a CADA píxel de la imagen\n- **Resultado:** Mapa de segmentación donde cada píxel tiene una clase\n- **Aplicaciones:** Sistemas de conducción autónoma, análisis médico\n\n**Reconocimiento Facial:**\n- **Objetivo:** Identificar o verificar personas a partir de rostros\n- **Enfoques:** FaceNet, DeepFace, ArcFace\n- **Características:** Embeddings faciales de alta dimensionalidad\n\n**OCR Avanzado:**\n- **Objetivo:** Reconocimiento de texto en condiciones complejas\n- **Enfoques:** Combinación de CNN + RNN/LSTM\n- **Ejemplo:** Tesseract 4.0+ con componentes LSTM\n\n**Ventajas de las CNN:**\n- **Invariancia translacional:** Reconocen patrones independientemente de su posición\n- **Aprendizaje jerárquico:** Capas bajas detectan bordes, capas altas detectan objetos complejos\n- **Eficiencia:** Menos parámetros que redes totalmente conectadas\n- **Estado del arte:** Mejor rendimiento en prácticamente todas las tareas de visión",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Detección de Características y Formas",
+      "shortDescription": "Técnicas para detectar características geométricas específicas como líneas y círculos en imágenes, y análisis de componentes conectados.",
+      "children": [
+        {
+          "title": "Transformada de Hough para Detección de Líneas",
+          "contentMd": "### Fundamentos\nLa **Transformada de Hough** es una técnica robusta para detectar líneas rectas (y otras formas parametrizables) en imágenes, incluso cuando están incompletas o con ruido.\n\n### Motivación:\n- Los detectores de contornos encuentran píxeles de borde, pero no los agrupan en entidades de mayor nivel como líneas.\n- La Transformada de Hough convierte el problema de detección de líneas en un problema de votación en un espacio de parámetros.\n\n### Representación de Líneas:\n- En lugar de usar la forma pendiente-ordenada al origen (y = mx + b), que tiene problemas con líneas verticales, se usa la forma polar:\n  ```\n  ρ = x cos θ + y sin θ\n  ```\n  donde:\n  - **ρ** es la distancia de la línea al origen.\n  - **θ** es el ángulo que forma la perpendicular a la línea con el eje x.\n\n### Espacio de Parámetros:\n- Cada línea en el espacio imagen (x,y) corresponde a un punto en el espacio de parámetros (ρ,θ).\n- Cada punto de contorno en la imagen vota por todas las líneas posibles que pasan por él (una curva sinusoidal en el espacio (ρ,θ)).\n- Las intersecciones de múltiples curvas en el espacio de parámetros indican líneas compartidas por múltiples puntos.\n\n### Algoritmo Básico:\n1. Crear una tabla de acumulación (matriz) H[ρ, θ] inicializada en cero.\n2. Para cada píxel de contorno (x,y):\n   - Para cada θ en un rango (ej: 0° a 360°):\n     - Calcular ρ = x cos θ + y sin θ.\n     - Incrementar H[ρ, θ] en uno (voto).\n3. Encontrar los picos (valores máximos) en H[ρ, θ]. Cada pico corresponde a una línea detectada.\n\n### Mejoras:\n- Utilizar información del gradiente para restringir el rango de θ que se vota.\n- Votar también en vecinos de la celda ganadora para compensar errores de cuantización.\n\n### Implementación en MATLAB:\n- `[H,theta,rho] = hough(BW)` calcula la Transformada de Hough de una imagen binaria BW.\n- `peaks = houghpeaks(H, numpeaks)` localiza picos en la matriz H.\n- `lines = houghlines(BW, theta, rho, peaks)` extrae segmentos de línea asociados a los picos.\n\n### Aplicaciones:\n- Detección de carriles en imágenes de tráfico.\n- Alineación de objetos en imágenes industriales.\n- Extracción de características arquitectónicas en imágenes aéreas.\n\n### Extensión a Otras Formas:\nLa Transformada de Hough puede extenderse para detectar círculos (con parámetros centro y radio) y elipses, aunque el costo computacional aumenta con el número de parámetros.",
+          "children": []
+        }
+      ]
+    }
+  ]
+}

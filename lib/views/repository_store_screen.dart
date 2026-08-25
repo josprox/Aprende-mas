@@ -5,6 +5,7 @@ import 'package:aprende_mas/viewmodels/auth_viewmodel.dart';
 import 'package:aprende_mas/viewmodels/repository_store_viewmodel.dart';
 import 'package:aprende_mas/views/auth/login_screen.dart';
 import 'package:aprende_mas/views/auth/user_profile_dialog.dart';
+import 'package:aprende_mas/views/settings/store_sources_screen.dart';
 import 'package:aprende_mas/widgets/app_empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -81,6 +82,23 @@ class _RepositoryStoreScreenState extends ConsumerState<RepositoryStoreScreen> {
           SliverAppBar.large(
             title: const Text('Tienda de materias'),
             actions: [
+              IconButton.filledTonal(
+                tooltip: 'Tiendas comunitarias',
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const StoreSourcesScreen(),
+                    ),
+                  );
+                  if (context.mounted) {
+                    await ref
+                        .read(repositoryStoreViewModelProvider.notifier)
+                        .fetchRepositories();
+                  }
+                },
+                icon: const Icon(Icons.add_business_rounded),
+              ),
               if (state.isLoading)
                 const Padding(
                   padding: EdgeInsets.only(right: 12),
@@ -166,9 +184,9 @@ class _RepositoryStoreScreenState extends ConsumerState<RepositoryStoreScreen> {
                         : const SizedBox.shrink();
                   }
                   return _RepositoryCard(
-                    item: state.items[index],
-                    onLoginRequired: _openLogin,
-                  )
+                        item: state.items[index],
+                        onLoginRequired: _openLogin,
+                      )
                       .animate(delay: (35 * index).ms)
                       .fadeIn()
                       .slideY(begin: 0.04, end: 0);
@@ -185,17 +203,16 @@ class _RepositoryCard extends ConsumerWidget {
   final RepositoryItem item;
   final VoidCallback onLoginRequired;
 
-  const _RepositoryCard({
-    required this.item,
-    required this.onLoginRequired,
-  });
+  const _RepositoryCard({required this.item, required this.onLoginRequired});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final status =
-        ref.watch(repositoryStoreViewModelProvider).itemStatuses[item.id] ??
+        ref
+            .watch(repositoryStoreViewModelProvider)
+            .itemStatuses[item.storeKey] ??
         RepositoryStatus.notInstalled;
     final authState = ref.watch(authViewModelProvider);
 
@@ -218,7 +235,9 @@ class _RepositoryCard extends ConsumerWidget {
                   ),
                   child: Center(
                     child: Text(
-                      item.title.substring(0, 1).toUpperCase(),
+                      item.title.isEmpty
+                          ? '?'
+                          : item.title.substring(0, 1).toUpperCase(),
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w900,
                         color: scheme.onPrimaryContainer,
@@ -245,6 +264,12 @@ class _RepositoryCard extends ConsumerWidget {
                         item.author,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                      Text(
+                        item.sourceName,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: scheme.primary,
                         ),
                       ),
                     ],
@@ -295,7 +320,7 @@ class _RepositoryCard extends ConsumerWidget {
                   onPressed: status == RepositoryStatus.installed
                       ? null
                       : () async {
-                          if (!authState.isLoggedIn) {
+                          if (!authState.isLoggedIn && item.sourceUrl.isEmpty) {
                             onLoginRequired();
                             return;
                           }
@@ -332,7 +357,7 @@ class _RepositoryCard extends ConsumerWidget {
       );
       await ref
           .read(repositoryStoreViewModelProvider.notifier)
-          .installOrUpdateRepository(item.id);
+          .installOrUpdateRepository(item);
 
       if (context.mounted) {
         Navigator.pop(context);

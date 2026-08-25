@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 2,
+  "name": "Estructuras de Datos y Programación en C",
+  "author": "Melchor Estrada José Luis",
+  "version": "1.1",
+  "modules": [
+    {
+      "title": "Funciones y Librerías",
+      "shortDescription": "Conceptos fundamentales sobre funciones, bibliotecas y métodos de llamada en programación.",
+      "children": [
+        {
+          "title": "Introducción a las Funciones",
+          "contentMd": "### ¿Qué es una Función?\nUna **función** es un conjunto de instrucciones agrupadas para realizar una tarea específica que puede reutilizarse fácilmente en diferentes partes de un programa. Es un bloque de código que realiza una operación concreta y puede invocarse múltiples veces.\n\n### Beneficios de Usar Funciones\n- **Reutilización de código:** Evita repetir las mismas instrucciones múltiples veces.\n- **Modularidad:** Divide programas grandes en partes más pequeñas y manejables.\n- **Mantenibilidad:** Facilita la corrección y actualización del código.\n\n### Sintaxis Básica\n```c\ntipo_Dato nombre_funcion(arg1, arg2, ...) {\n    // Instrucciones de la función\n    return valor;\n}\n```\nEl **nombre de la función** se utiliza para llamarla o invocarla cuando sea necesario ejecutar su código.",
+          "children": []
+        },
+        {
+          "title": "Librerías o Bibliotecas",
+          "contentMd": "### Definición de Librerías\nLas **bibliotecas** (o librerías) son archivos que contienen código objeto de programas preconstruidos, permitiendo realizar tareas comunes sin necesidad de programarlas desde cero.\n\n### Características Principales\n- **Reutilización:** Proporcionan funcionalidades ya implementadas.\n- **Organización:** Clasificadas por tipo de trabajo (entrada/salida, matemáticas, manejo de memoria, etc.).\n- **Extensibilidad:** Pueden crearse librerías personalizadas.\n\n### Extensiones Comunes\n- **.h:** Archivos de cabecera en C/C++.\n- **.dll:** Bibliotecas de enlace dinámico en Windows.\n- **.a:** Bibliotecas estáticas en Unix/Linux.\n\n### Ejemplos por Lenguaje\n- **C++:** iostream, cmath, cstring\n- **Python:** matplotlib, numpy, pandas\n- **JavaScript:** jQuery, Moment.js, Chart.js",
+          "children": []
+        },
+        {
+          "title": "Llamadas por Valor y Referencia",
+          "contentMd": "### Llamada por Valor\nEn la **llamada por valor**, los argumentos enviados a una función son copiados en los parámetros correspondientes. Cualquier modificación dentro de la función no afecta a las variables originales.\n\n**Características:**\n- Los cambios se realizan sobre copias de los valores.\n- La variable original permanece inalterada.\n- Es el método por defecto en C.\n\n### Llamada por Referencia\nEn la **llamada por referencia**, se pasa la dirección de memoria de la variable en lugar de su valor. Los cambios realizados dentro de la función afectan directamente a la variable original.\n\n**Características:**\n- Se utilizan punteros para implementar este esquema.\n- Más eficiente en memoria para estructuras grandes.\n- Puede provocar efectos secundarios si no se maneja con cuidado.\n\n### Diferencias Clave\n1. **Paso de parámetros:** Valor → copia; Referencia → dirección.\n2. **Modificación de variables:** Valor → no afecta original; Referencia → sí afecta.\n3. **Eficiencia:** Referencia es más eficiente para datos grandes.",
+          "children": []
+        },
+        {
+          "title": "Directivas de Compilación",
+          "contentMd": "### ¿Qué son las Directivas?\nLas **directivas** (o pragmas) son construcciones del lenguaje que se especifican en el código fuente y son procesadas antes de la compilación. Proporcionan información adicional al compilador o preprocesador.\n\n### Usos Comunes\n- **Inclusión de librerías:** `#include <stdio.h>`\n- **Definición de constantes:** `#define PI 3.1416`\n- **Definición de macros:** `#define MAX(a,b) ((a) > (b) ? (a) : (b))`\n- **Compilación condicional:** `#ifdef`, `#ifndef`\n\n### Ejemplos por Lenguaje\n- **C/C++:** `#include`, `#define`, `#pragma once`\n- **Java:** `import java.util.Scanner;`\n- **Python:** `from math import sqrt`\n- **JavaScript:** `'use strict';`\n\n### Importancia\nEl uso correcto de directivas es crítico en proyectos grandes, ya que mejora la organización del código, la eficiencia y la portabilidad entre diferentes sistemas.",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Punteros y Gestión de Memoria",
+      "shortDescription": "Conceptos fundamentales sobre punteros, referenciación, desreferenciación y manejo de direcciones de memoria.",
+      "children": [
+        {
+          "title": "Introducción a los Punteros",
+          "contentMd": "### ¿Qué es un Puntero?\nUn **puntero** es una variable cuyo valor es la **dirección de memoria** de otra variable. Se dice que un puntero \"apunta\" a la variable cuya dirección almacena.\n\n### Importancia en C/C++\n- **Eficiencia:** Permiten manipular datos directamente en memoria.\n- **Flexibilidad:** Facilitan la creación de estructuras de datos dinámicas.\n- **Acceso directo:** Permiten trabajar con la memoria a bajo nivel.\n\n### Declaración de Punteros\n```c\nint *ptr1;        // Puntero a entero\nchar *cad1;       // Puntero a carácter\nfloat *ptr2;      // Puntero a float\n```\n\n### Referenciación\nLa **referenciación** es la obtención de la dirección de una variable usando el operador `&`:\n```c\nint x = 25;\nprintf(\"Dirección de x: %p\", &x);  // Imprime algo como 0x4fffd34\n```",
+          "children": []
+        },
+        {
+          "title": "Operaciones con Punteros",
+          "contentMd": "### Asignación de Punteros\nLos punteros pueden asignarse con direcciones de variables u otros punteros:\n```c\nint i = 5;\nint *p, *q;\np = &i;     // p apunta a i\nq = p;      // q apunta a la misma dirección que p\n```\n\n### Desreferenciación\nLa **desreferenciación** obtiene el valor almacenado en la dirección a la que apunta un puntero, usando el operador `*`:\n```c\nint x = 17, y;\nint *p = &x;\nprintf(\"Valor de x: %d\", *p);  // Imprime 17\ny = *p + 3;                    // y recibe 20\n```\n\n### Verificación de Tipos\nLos punteros están fuertemente tipados. Solo pueden apuntar a variables del tipo especificado en su declaración:\n```c\nint *p1;\nfloat *p2;\nint x;\np1 = &x;     // VÁLIDO\np2 = &x;     // ERROR de compilación\n```",
+          "children": []
+        },
+        {
+          "title": "Manejo Seguro de Punteros",
+          "contentMd": "### Direcciones Inválidas\nUn puntero puede contener una dirección inválida por dos razones principales:\n\n1. **No inicialización:** Al declararse, un puntero tiene un valor aleatorio hasta que se inicializa.\n2. **Liberación de memoria:** Cuando se libera la memoria a la que apunta (ámbito de variable o liberación dinámica).\n\n### Consecuencias de Desreferenciar Direcciones Inválidas\n- **Valores incorrectos:** Se obtienen datos no inicializados.\n- **Sobrescritura de datos:** Puede modificar memoria de otras variables.\n- **Errores de ejecución:** El sistema operativo puede detener el programa.\n- **Inestabilidad del sistema:** En casos graves, puede afectar al SO.\n\n### Puntero NULL\nEl valor **NULL** indica que un puntero no apunta a nada. Es una macro definida normalmente como 0:\n```c\n#define NULL 0\nint *p = NULL;\n```\n\n**Verificación de punteros nulos:**\n```c\nif (p != NULL) {\n    // Operaciones seguras con *p\n}\n```\nEs incorrecto desreferenciar un puntero NULL, ya que causa comportamiento indefinido.",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Estructuras y Tipos de Datos",
+      "shortDescription": "Definición, uso y manipulación de estructuras, operadores de acceso y creación de tipos personalizados.",
+      "children": [
+        {
+          "title": "Introducción a las Estructuras",
+          "contentMd": "### ¿Qué es una Estructura?\nUna **estructura** es una colección de variables relacionadas bajo un mismo nombre. A diferencia de los arreglos, las estructuras pueden contener variables de diferentes tipos de datos.\n\n### Características Principales\n- **Agrupación lógica:** Permite tratar datos relacionados como una sola unidad.\n- **Flexibilidad:** Cada miembro puede ser de un tipo de dato diferente.\n- **Organización:** Mejora la claridad y mantenimiento del código.\n\n### Declaración de Estructuras\n```c\nstruct nombreEstructura {\n    tipoDato miembro_1;\n    tipoDato miembro_2;\n    // ...\n    tipoDato miembro_n;\n};\n```\n\n### Ejemplo Práctico\n```c\nstruct alumno {\n    int clave;\n    char apellido[20];\n    float promedio;\n};",
+          "children": []
+        },
+        {
+          "title": "Uso y Manipulación de Estructuras",
+          "contentMd": "### Declaración de Variables de Estructura\n```c\nstruct alumno varAlum1, varAlum2;  // Forma tradicional\nalumno varAlum3, varAlum4;         // En C++ (sin 'struct')\n```\n\n### Inicialización de Estructuras\nLas estructuras pueden inicializarse mediante listas:\n```c\nstruct fecha f = {4, 7, 2024, 186, \"Julio\"};\n```\nSi hay menos inicializadores que miembros, los restantes se inicializan a 0.\n\n### Operador Punto (.)\nEl **operador punto** se usa para acceder a miembros de estructuras cuando se tiene una instancia directa:\n```c\nstruct alumno alum1;\nalum1.clave = 1341;\nalum1.promedio = 8.5;\nprintf(\"Clave: %d\", alum1.clave);\n```\n\n### Operador Flecha (->)\nEl **operador flecha** se usa cuando se tiene un puntero a una estructura:\n```c\nstruct alumno *ptrAlum = &alum1;\nptrAlum->promedio = 9.0;        // Equivale a (*ptrAlum).promedio = 9.0\n```",
+          "children": []
+        },
+        {
+          "title": "Estructuras Anidadas y Typedef",
+          "contentMd": "### Estructuras Anidadas\nLas estructuras pueden contener otras estructuras como miembros:\n```c\nstruct persona {\n    char nombre[50];\n    char direccion[100];\n    long codigoPostal;\n    struct fecha cumpleanios;    // Estructura anidada\n    struct fecha contrato;\n};\n```\n\n### Typedef para Sinónimos\nLa palabra reservada **typedef** crea alias para tipos de datos existentes:\n```c\ntypedef struct alumno Alumno;  // Alumno es sinónimo de struct alumno\n```\n\n### Declaración con Typedef\nForma alternativa más compacta:\n```c\ntypedef struct {\n    char c;\n    int i;\n} Ejemplo;\n\nEjemplo varA[10];  // Declaración directa sin 'struct'\n```\n\n### Beneficios de Typedef\n- **Portabilidad:** Facilita el cambio de tipos en diferentes plataformas.\n- **Legibilidad:** Crea nombres más significativos para tipos complejos.\n- **Mantenibilidad:** Simplifica la modificación de tipos en programas grandes.",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Recursividad",
+      "shortDescription": "Conceptos fundamentales de recursión, implementación y ejemplos prácticos de funciones recursivas.",
+      "children": [
+        {
+          "title": "Fundamentos de la Recursividad",
+          "contentMd": "### ¿Qué es la Recursividad?\nLa **recursividad** es una técnica donde una función se define en términos de sí misma. Una función recursiva se llama a sí misma de forma repetida hasta que se satisface una condición de terminación.\n\n### Condiciones para la Recursividad\n1. **Caso base:** Debe existir al menos una definición explícita para algún argumento.\n2. **Caso recursivo:** La función debe llamarse a sí misma con argumentos que converjan hacia el caso base.\n\n### Características Principales\n- **Elegante matemáticamente:** Muchos problemas se expresan naturalmente de forma recursiva.\n- **Pila de ejecución:** Las llamadas recursivas se almacenan en una pila hasta encontrar la condición de término.\n- **Variables locales:** Cada llamada recursiva crea un nuevo conjunto de variables locales.\n\n### Ejemplo Conceptual\n```c\nvoid funcionRecursiva(int n) {\n    if (n <= 0) return;     // Caso base\n    funcionRecursiva(n - 1); // Caso recursivo\n}\n```",
+          "children": []
+        },
+        {
+          "title": "Implementación y Ejemplos",
+          "contentMd": "### Mecanismo de Ejecución\nCuando se ejecuta una función recursiva:\n1. Las llamadas se apilan en memoria.\n2. Se ejecutan en orden inverso al ser generadas.\n3. Cada llamada tiene su propio conjunto de variables locales.\n\n### Ejemplo: Factorial\nEl factorial es el ejemplo clásico de recursividad:\n```c\nlong int factorial(int n) {\n    if (n <= 1) \n        return 1;           // Caso base\n    else \n        return n * factorial(n - 1);  // Caso recursivo\n}\n```\n\n### Proceso del Factorial\n```\nfactorial(4)\n→ 4 * factorial(3)\n→ 4 * (3 * factorial(2))\n→ 4 * (3 * (2 * factorial(1)))\n→ 4 * (3 * (2 * 1))\n→ 4 * (3 * 2)\n→ 4 * 6\n→ 24\n```\n\n### Consideraciones de Diseño\n- **Condición de término:** Siempre debe existir y ser alcanzable.\n- **Convergencia:** Cada llamada debe acercarse al caso base.\n- **Eficiencia:** La recursividad puede ser menos eficiente que las soluciones iterativas debido al overhead de las llamadas de función.",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Listas Enlazadas",
+      "shortDescription": "Estructura fundamental de datos dinámicos, implementación y operaciones básicas con listas enlazadas.",
+      "children": [
+        {
+          "title": "Conceptos Fundamentales",
+          "contentMd": "### ¿Qué es una Lista Enlazada?\nUna **lista enlazada** es una estructura de datos fundamental compuesta por una secuencia de nodos. Cada nodo contiene campos de datos y una o más referencias (punteros) a otros nodos.\n\n### Diferencias con Arrays\n- **Acceso:** En listas enlazadas el acceso es secuencial mediante punteros, no por índices.\n- **Almacenamiento:** El orden de almacenamiento en memoria puede ser diferente al orden lógico.\n- **Tamaño:** Las listas pueden crecer o reducirse dinámicamente.\n\n### Ventajas sobre Arrays\n- **Inserción/eliminación eficiente:** En tiempo constante si se conoce la posición.\n- **Tamaño dinámico:** No requiere redimensionamiento como los arrays.\n- **Flexibilidad:** El orden de recorrido puede ser diferente al de almacenamiento.\n\n### Lista Enlazada Simple\nLa **lista enlazada simple** tiene un enlace por nodo que apunta al siguiente nodo. El último nodo apunta a NULL.\n\n### Estructura de un Nodo\n```c\nstruct ElementoLista {\n    int dato;\n    struct ElementoLista *siguiente;\n};\n```",
+          "children": []
+        },
+        {
+          "title": "Operaciones Básicas",
+          "contentMd": "### Operaciones Comunes en Listas Enlazadas\n\n**Crear Lista:**\n```c\nstruct ElementoLista* crearLista() {\n    return NULL;  // Lista vacía\n}\n```\n\n**Insertar Elemento:**\n- Al inicio, al final, o en posición específica.\n- Requiere ajustar los punteros de los nodos afectados.\n\n**Eliminar Elemento:**\n- Buscar el elemento y ajustar punteros para \"saltarlo\".\n- Liberar la memoria del nodo eliminado.\n\n**Imprimir Lista:**\n```c\nvoid imprimirLista(struct ElementoLista *inicio) {\n    struct ElementoLista *actual = inicio;\n    while (actual != NULL) {\n        printf(\"%d \", actual->dato);\n        actual = actual->siguiente;\n    }\n}\n```\n\n**Verificar Lista Vacía:**\n```c\nint estaVacia(struct ElementoLista *inicio) {\n    return (inicio == NULL);\n}\n```\n\n### Características de Recorrido\n- **Direccionalidad:** En listas simples, el recorrido es unidireccional (del primero al último).\n- **Acceso secuencial:** Para acceder a un elemento, debe recorrerse la lista desde el inicio.\n- **Eficiencia:** Inserción/eliminación: O(1) si se conoce la posición; Búsqueda: O(n).",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Pilas (Stacks)",
+      "shortDescription": "Estructura de datos LIFO, implementación y operaciones fundamentales con pilas.",
+      "children": [
+        {
+          "title": "Fundamentos de las Pilas",
+          "contentMd": "### ¿Qué es una Pila?\nUna **pila** (stack) es una estructura de datos de tipo **LIFO** (Last In, First Out - Último en Entrar, Primero en Salir). Los elementos se añaden y se eliminan únicamente por un extremo llamado **cima** (top).\n\n### Características Principales\n- **Acceso restringido:** Solo se puede acceder al elemento en la cima.\n- **Operaciones básicas:** Push (insertar) y Pop (eliminar).\n- **Implementación:** Se puede implementar con arrays o listas enlazadas.\n\n### Analogías del Mundo Real\n- **Pila de platos:** Solo puedes tomar el plato de arriba.\n- **Pila de libros:** Para tomar un libro del medio, debes quitar los de arriba.\n- **Historial de deshacer:** La última acción es la primera en deshacerse.\n\n### Estructura de una Pila\n```c\nstruct Pila {\n    int dato;\n    struct Pila *siguiente;\n};\n```\n\n### Aplicaciones Comunes\n- **Gestión de llamadas a funciones:** El sistema guarda el estado en una pila.\n- **Algoritmos de backtracking:** Para explorar diferentes caminos.\n- **Evaluación de expresiones:** Notación polaca inversa.\n- **Historial de navegación:** Páginas visitadas recientemente.",
+          "children": []
+        },
+        {
+          "title": "Operaciones con Pilas",
+          "contentMd": "### Operaciones Fundamentales\n\n**Push - Insertar:**\nAñade un nuevo elemento en la cima de la pila.\n```c\nvoid push(struct Pila **cima, int valor) {\n    struct Pila *nuevo = malloc(sizeof(struct Pila));\n    nuevo->dato = valor;\n    nuevo->siguiente = *cima;\n    *cima = nuevo;\n}\n```\n\n**Pop - Eliminar:**\nElimina y devuelve el elemento de la cima.\n```c\nint pop(struct Pila **cima) {\n    if (*cima == NULL) return -1;  // Pila vacía\n    struct Pila *temp = *cima;\n    int valor = temp->dato;\n    *cima = (*cima)->siguiente;\n    free(temp);\n    return valor;\n}\n```\n\n**Peek/Top - Consultar:**\nObtiene el elemento superior sin eliminarlo.\n```c\nint peek(struct Pila *cima) {\n    if (cima == NULL) return -1;\n    return cima->dato;\n}\n```\n\n**isEmpty - Verificar Vacía:**\nComprueba si la pila está vacía.\n```c\nint isEmpty(struct Pila *cima) {\n    return (cima == NULL);\n}\n```\n\n**Size - Tamaño:**\nDevuelve el número de elementos en la pila.\n```c\nint size(struct Pila *cima) {\n    int contador = 0;\n    struct Pila *actual = cima;\n    while (actual != NULL) {\n        contador++;\n        actual = actual->siguiente;\n    }\n    return contador;\n}\n```",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Colas (Queues)",
+      "shortDescription": "Estructura de datos FIFO, implementación y operaciones fundamentales con colas.",
+      "children": [
+        {
+          "title": "Fundamentos de las Colas",
+          "contentMd": "### ¿Qué es una Cola?\nUna **cola** (queue) es una estructura de datos de tipo **FIFO** (First In, First Out - Primero en Entrar, Primero en Salir). Los elementos se insertan por un extremo (cola) y se eliminan por el otro (frente).\n\n### Características Principales\n- **Acceso por extremos:** Inserción por la cola, eliminación por el frente.\n- **Orden de procesamiento:** Los elementos se procesan en el mismo orden en que llegaron.\n- **Implementación:** Con arrays o listas enlazadas.\n\n### Analogías del Mundo Real\n- **Fila de atención al cliente:** El primero en llegar es el primero en ser atendido.\n- **Cola de impresión:** Los documentos se imprimen en el orden en que se enviaron.\n- **Paquetes de red:** Los mensajes se procesan en orden de llegada.\n\n### Estructura de una Cola\n```c\nstruct Cola {\n    int dato;\n    struct Cola *siguiente;\n};\n\nstruct Cola *frente = NULL;  // Puntero al frente\nstruct Cola *cola = NULL;    // Puntero a la cola\n```\n\n### Aplicaciones Comunes\n- **Sistemas de atención a clientes:** Tickets de espera.\n- **Buffers de datos:** Almacenamiento temporal de información.\n- **Planificación de procesos:** En sistemas operativos.\n- **Manejo de peticiones:** En servidores web.",
+          "children": []
+        },
+        {
+          "title": "Operaciones con Colas",
+          "contentMd": "### Operaciones Fundamentales\n\n**Encolar (Enqueue) - Insertar:**\nAñade un nuevo elemento por la cola.\n```c\nvoid encolar(int valor) {\n    struct Cola *nuevo = malloc(sizeof(struct Cola));\n    nuevo->dato = valor;\n    nuevo->siguiente = NULL;\n    \n    if (cola == NULL) {  // Cola vacía\n        frente = cola = nuevo;\n    } else {\n        cola->siguiente = nuevo;\n        cola = nuevo;\n    }\n}\n```\n\n**Desencolar (Dequeue) - Eliminar:**\nElimina y devuelve el elemento del frente.\n```c\nint desencolar() {\n    if (frente == NULL) return -1;  // Cola vacía\n    \n    struct Cola *temp = frente;\n    int valor = temp->dato;\n    frente = frente->siguiente;\n    \n    if (frente == NULL) cola = NULL;  // Cola quedó vacía\n    \n    free(temp);\n    return valor;\n}\n```\n\n**isEmpty - Verificar Vacía:**\nComprueba si la cola está vacía.\n```c\nint isEmpty() {\n    return (frente == NULL);\n}\n```\n\n**Size - Tamaño:**\nDevuelve el número de elementos en la cola.\n```c\nint size() {\n    int contador = 0;\n    struct Cola *actual = frente;\n    while (actual != NULL) {\n        contador++;\n        actual = actual->siguiente;\n    }\n    return contador;\n}\n```\n\n**Front - Consultar Frente:**\nObtiene el elemento del frente sin eliminarlo.\n```c\nint front() {\n    if (frente == NULL) return -1;\n    return frente->dato;\n}\n```",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Árboles Binarios",
+      "shortDescription": "Estructuras de datos jerárquicas, recorridos y operaciones fundamentales con árboles binarios.",
+      "children": [
+        {
+          "title": "Conceptos Fundamentales",
+          "contentMd": "### ¿Qué es un Árbol Binario?\nUn **árbol binario** es una estructura de datos jerárquica compuesta por nodos interconectados. Cada nodo puede tener hasta dos nodos secundarios: izquierdo y derecho.\n\n### Terminología Básica\n- **Nodo raíz:** El primer nodo del árbol, no tiene padre.\n- **Nodos hijos:** Nodos secundarios de un nodo padre.\n- **Nodos hoja:** Nodos sin hijos.\n- **Nodos hermanos:** Nodos con el mismo padre.\n- **Nodos internos:** Nodos con al menos un hijo.\n\n### Estructura de un Nodo\n```c\nstruct NodoArbol {\n    int valor;\n    struct NodoArbol *izquierdo;\n    struct NodoArbol *derecho;\n};\n```\n\n### Propiedades Importantes\n- **Camino:** Secuencia de nodos consecutivos.\n- **Rama:** Camino que termina en una hoja.\n- **Nivel:** Longitud del camino desde la raíz al nodo.\n- **Altura/Profundidad:** Número máximo de nodos de una rama.\n- **Peso:** Número de nodos terminales (hojas).\n\n### Ventajas de los Árboles Binarios\n- **Búsqueda eficiente:** Más rápida que en listas enlazadas.\n- **Inserción/eliminación flexible:** Estructura dinámica.\n- **Representación jerárquica:** Ideal para datos con relaciones padre-hijo.",
+          "children": []
+        },
+        {
+          "title": "Recorridos de Árboles",
+          "contentMd": "### Tipos de Recorrido\nEl **recorrido de un árbol** es el proceso de visitar todos sus nodos una vez. Existen tres recorridos fundamentales que difieren en el orden en que visitan la raíz.\n\n### Recorrido In-Orden (En Orden)\nVisita los nodos en orden ascendente (para árboles binarios de búsqueda).\n```c\nvoid in_orden(struct NodoArbol *p) {\n    if (p != NULL) {\n        in_orden(p->izquierdo);\n        printf(\"%d \", p->valor);\n        in_orden(p->derecho);\n    }\n}\n```\n**Orden:** Subárbol izquierdo → Raíz → Subárbol derecho\n\n### Recorrido Pre-Orden (Preorden)\nVisita la raíz antes que los subárboles.\n```c\nvoid pre_orden(struct NodoArbol *p) {\n    if (p != NULL) {\n        printf(\"%d \", p->valor);\n        pre_orden(p->izquierdo);\n        pre_orden(p->derecho);\n    }\n}\n```\n**Orden:** Raíz → Subárbol izquierdo → Subárbol derecho\n\n### Recorrido Post-Orden (Postorden)\nVisita la raíz después de los subárboles.\n```c\nvoid post_orden(struct NodoArbol *p) {\n    if (p != NULL) {\n        post_orden(p->izquierdo);\n        post_orden(p->derecho);\n        printf(\"%d \", p->valor);\n    }\n}\n```\n**Orden:** Subárbol izquierdo → Subárbol derecho → Raíz\n\n### Aplicaciones de Cada Recorrido\n- **In-Orden:** Para obtener elementos ordenados en ABB.\n- **Pre-Orden:** Para copiar la estructura del árbol.\n- **Post-Orden:** Para liberar memoria del árbol.",
+          "children": []
+        },
+        {
+          "title": "Operaciones y Aplicaciones",
+          "contentMd": "### Operaciones Básicas en Árboles Binarios\n\n**Búsqueda:**\n```c\nstruct NodoArbol* buscar(struct NodoArbol *raiz, int valor) {\n    if (raiz == NULL || raiz->valor == valor)\n        return raiz;\n    \n    struct NodoArbol *izq = buscar(raiz->izquierdo, valor);\n    if (izq != NULL) return izq;\n    \n    return buscar(raiz->derecho, valor);\n}\n```\n\n**Inserción:**\nDepende del tipo de árbol (binario de búsqueda, binario completo, etc.).\n\n**Eliminación:**\nRequiere reestructurar el árbol para mantener sus propiedades.\n\n### Aplicaciones de los Árboles Binarios\n\n**Árboles Binarios de Búsqueda (ABB):**\n- Búsqueda, inserción y eliminación en tiempo O(log n) en promedio.\n- Implementación de conjuntos y mapas.\n\n**Heap (Montículos):**\n- Implementación de colas de prioridad.\n- Algoritmos de ordenación como Heapsort.\n\n**Árboles de Expresión:**\n- Representación de expresiones matemáticas.\n- Evaluación eficiente de expresiones.\n\n**Árboles de Sintaxis Abstracta:**\n- En compiladores para representar la estructura del código.\n\n### Ventajas Competitivas\n- **Búsqueda eficiente:** Mejor que O(n) en árboles balanceados.\n- **Flexibilidad:** Fácil inserción y eliminación.\n- **Ordenamiento natural:** Los recorridos proporcionan diferentes órdenes.",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Algoritmos de Ordenación",
+      "shortDescription": "Métodos fundamentales para ordenar datos, clasificación y criterios de selección de algoritmos.",
+      "children": [
+        {
+          "title": "Conceptos Fundamentales",
+          "contentMd": "### ¿Qué es la Ordenación?\nLa **ordenación** (sorting) es una operación que consiste en disponer un conjunto de datos en un orden específico con respecto a un campo clave.\n\n### Clasificación de los Algoritmos\n\n**Por ubicación de los datos:**\n- **Ordenación interna:** Datos en memoria principal (arrays, listas).\n- **Ordenación externa:** Datos en almacenamiento secundario (archivos).\n\n**Por criterio de orden:**\n- **Ascendente:** De menor a mayor.\n- **Descendente:** De mayor a menor.\n- **Alfabético:** Para datos de texto.\n\n### Criterios de Eficiencia\n\n**Tiempo de ejecución:**\n- Medido en notación Big O.\n- Depende del tamaño de entrada (n).\n\n**Uso de memoria:**\n- Algoritmos in-place vs. que requieren memoria adicional.\n\n**Estabilidad:**\n- Un algoritmo estable mantiene el orden relativo de elementos iguales.\n\n### Ejemplos de Orden\n```\nAscendente:   4, 5, 14, 21, 32, 45\nDescendente:  75, 70, 35, 16, 14, 12\nAlfabético:   Garcia, Lopez, Martinez, Rodriguez\n```",
+          "children": []
+        },
+        {
+          "title": "Algoritmos Básicos",
+          "contentMd": "### Ordenación por Selección (Selection Sort)\n\n**Concepto:**\nEncuentra el elemento mínimo y lo coloca en su posición correcta en cada iteración.\n\n**Proceso con [50, 20, 40, 80, 30]:**\n1. Encuentra mínimo (20) → intercambia con primera posición: [20, 50, 40, 80, 30]\n2. Encuentra mínimo (30) en subarray restante → [20, 30, 40, 80, 50]\n3. Continúa hasta ordenar completamente.\n\n**Características:**\n- **Complejidad:** O(n²) en todos los casos.\n- **Memoria:** O(1) - in-place.\n- **Estable:** No.\n\n### Ordenación por Inserción (Insertion Sort)\n\n**Concepto:**\nConstruye el array ordenado insertando un elemento a la vez en su posición correcta.\n\n**Proceso con [50, 20, 40, 80, 30]:**\n1. Toma 20 → lo inserta antes de 50: [20, 50, 40, 80, 30]\n2. Toma 40 → lo inserta entre 20 y 50: [20, 40, 50, 80, 30]\n3. Continúa hasta ordenar completamente.\n\n**Características:**\n- **Complejidad:** O(n²) peor caso, O(n) mejor caso (array casi ordenado).\n- **Memoria:** O(1) - in-place.\n- **Estable:** Sí.\n\n### Ordenación por Intercambio (Bubble Sort)\n\n**Concepto:**\nCompara elementos adyacentes e intercambia si están en orden incorrecto.\n\n**Proceso con [50, 20, 40, 80, 30]:**\n1. Compara 50-20 → intercambia: [20, 50, 40, 80, 30]\n2. Compara 50-40 → intercambia: [20, 40, 50, 80, 30]\n3. Compara 80-30 → intercambia: [20, 40, 50, 30, 80]\n4. Repite hasta no haber intercambios.\n\n**Características:**\n- **Complejidad:** O(n²) peor caso, O(n) mejor caso.\n- **Memoria:** O(1) - in-place.\n- **Estable:** Sí.",
+          "children": []
+        },
+        {
+          "title": "Algoritmos Avanzados",
+          "contentMd": "### Ordenación Rápida (Quicksort)\n\n**Concepto:**\nAlgoritmo divide y vencerás que selecciona un pivote y particiona el array alrededor de él.\n\n**Proceso:**\n1. Elegir pivote (ej. último elemento).\n2. Particionar: elementos menores a la izquierda, mayores a la derecha.\n3. Aplicar recursivamente a cada partición.\n\n**Características:**\n- **Complejidad:** O(n log n) promedio, O(n²) peor caso.\n- **Memoria:** O(log n) para la pila de recursión.\n- **Estable:** No.\n\n### Ordenación por Mezcla (Mergesort)\n\n**Concepto:**\nAlgoritmo divide y vencerás que divide el array en mitades, las ordena recursivamente y luego las fusiona.\n\n**Proceso:**\n1. Dividir el array en mitades hasta tener subarrays de 1 elemento.\n2. Fusionar subarrays ordenados manteniendo el orden.\n\n**Características:**\n- **Complejidad:** O(n log n) en todos los casos.\n- **Memoria:** O(n) - requiere array auxiliar.\n- **Estable:** Sí.\n\n### Criterios de Selección\n\n**Para datos pequeños:**\n- Inserción o Selección por simplicidad.\n\n**Para datos medianos/grandes:**\n- Quicksort por eficiencia promedio.\n- Mergesort por garantía de O(n log n).\n\n**Para datos casi ordenados:**\n- Inserción por su buen comportamiento en este caso.\n\n**Cuando la estabilidad importa:**\n- Mergesort o Inserción.\n\n**Cuando la memoria es limitada:**\n- Quicksort in-place o Heapsort.",
+          "children": []
+        }
+      ]
+    }
+  ]
+}

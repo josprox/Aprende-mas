@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:sqflite/sqflite.dart';
 import 'package:aprende_mas/models/import_models.dart';
 import 'package:aprende_mas/models/subject_models.dart';
 import 'package:aprende_mas/repositories/i_study_repository.dart';
@@ -11,6 +12,27 @@ class StudyRepository implements IStudyRepository {
   final GroqApiService _groqApiService;
   final RepositoryApiService _repositoryApiService;
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+
+  Future<void> _insertNodeTree(
+    Transaction txn,
+    int subjectId,
+    int moduleId,
+    int parentId,
+    List<SubmoduleImport> nodes,
+  ) async {
+    for (var index = 0; index < nodes.length; index++) {
+      final item = nodes[index];
+      final nodeId = await txn.insert('content_nodes', {
+        'subject_id': subjectId,
+        'parent_id': parentId,
+        'module_id': moduleId,
+        'title': item.title,
+        'content_md': item.contentMd,
+        'sort_order': index,
+      });
+      await _insertNodeTree(txn, subjectId, moduleId, nodeId, item.children);
+    }
+  }
 
   // Stream Controllers
   final _subjectsController = StreamController<List<Subject>>.broadcast();
@@ -76,11 +98,35 @@ class StudyRepository implements IStudyRepository {
   Stream<List<Submodule>> getSubmodulesForModule(int moduleId) async* {
     final db = await _dbHelper.database;
     final maps = await db.query(
-      'submodules',
-      where: 'module_id = ?',
-      whereArgs: [moduleId],
+      'content_nodes',
+      where: 'module_id = ? AND content_md != ?',
+      whereArgs: [moduleId, ''],
     );
     yield maps.map((e) => Submodule.fromMap(e)).toList();
+  }
+
+  @override
+  Stream<List<ContentNode>> getRootNodesForSubject(int subjectId) async* {
+    final db = await _dbHelper.database;
+    final maps = await db.query(
+      'content_nodes',
+      where: 'subject_id = ? AND parent_id IS NULL',
+      whereArgs: [subjectId],
+      orderBy: 'sort_order, id',
+    );
+    yield maps.map(ContentNode.fromMap).toList();
+  }
+
+  @override
+  Stream<List<ContentNode>> getChildrenForNode(int nodeId) async* {
+    final db = await _dbHelper.database;
+    final maps = await db.query(
+      'content_nodes',
+      where: 'parent_id = ?',
+      whereArgs: [nodeId],
+      orderBy: 'sort_order, id',
+    );
+    yield maps.map(ContentNode.fromMap).toList();
   }
 
   @override
@@ -98,9 +144,9 @@ class StudyRepository implements IStudyRepository {
 
     // Generate questions via AI
     final submodulesMap = await db.query(
-      'submodules',
-      where: 'module_id = ?',
-      whereArgs: [moduleId],
+      'content_nodes',
+      where: 'module_id = ? AND content_md != ?',
+      whereArgs: [moduleId, ''],
     );
     final submodules = submodulesMap.map((e) => Submodule.fromMap(e)).toList();
     final fullContent = submodules.map((s) => s.contentMd).join("\n\n");
@@ -289,6 +335,7 @@ class StudyRepository implements IStudyRepository {
   Future<void> importSubjectFromJson(
     String jsonString, {
     int? repositoryId,
+    String repositorySource = 'joss-red',
   }) async {
     final db = await _dbHelper.database;
 
@@ -296,8 +343,8 @@ class StudyRepository implements IStudyRepository {
     if (repositoryId != null) {
       final existing = await db.query(
         'subjects',
-        where: 'repository_id = ?',
-        whereArgs: [repositoryId],
+        where: 'repository_id = ? AND repository_source = ?',
+        whereArgs: [repositoryId, repositorySource],
       );
       if (existing.isNotEmpty) {
         final subjectId = existing.first['id'] as int;
@@ -314,6 +361,7 @@ class StudyRepository implements IStudyRepository {
         'author': subjectImport.author,
         'version': subjectImport.version,
         'repository_id': repositoryId,
+        'repository_source': repositorySource,
       });
 
       for (final moduleImport in subjectImport.modules) {
@@ -321,6 +369,13 @@ class StudyRepository implements IStudyRepository {
           'subject_id': subjectId,
           'title': moduleImport.title,
           'short_description': moduleImport.shortDescription,
+        });
+        final rootId = await txn.insert('content_nodes', {
+          'subject_id': subjectId,
+          'module_id': moduleId,
+          'title': moduleImport.title,
+          'content_md': '',
+          'sort_order': subjectImport.modules.indexOf(moduleImport),
         });
 
         for (final submoduleImport in moduleImport.submodules) {
@@ -330,6 +385,13 @@ class StudyRepository implements IStudyRepository {
             'content_md': submoduleImport.contentMd,
           });
         }
+        await _insertNodeTree(
+          txn,
+          subjectId,
+          moduleId,
+          rootId,
+          moduleImport.submodules,
+        );
       }
     });
 
@@ -358,12 +420,24 @@ class StudyRepository implements IStudyRepository {
         where: 'subject_id = ?',
         whereArgs: [subjectId],
       );
+      await txn.delete(
+        'content_nodes',
+        where: 'subject_id = ?',
+        whereArgs: [subjectId],
+      );
 
       for (final moduleImport in subjectImport.modules) {
         final moduleId = await txn.insert('modules', {
           'subject_id': subjectId,
           'title': moduleImport.title,
           'short_description': moduleImport.shortDescription,
+        });
+        final rootId = await txn.insert('content_nodes', {
+          'subject_id': subjectId,
+          'module_id': moduleId,
+          'title': moduleImport.title,
+          'content_md': '',
+          'sort_order': subjectImport.modules.indexOf(moduleImport),
         });
 
         for (final submoduleImport in moduleImport.submodules) {
@@ -373,6 +447,13 @@ class StudyRepository implements IStudyRepository {
             'content_md': submoduleImport.contentMd,
           });
         }
+        await _insertNodeTree(
+          txn,
+          subjectId,
+          moduleId,
+          rootId,
+          moduleImport.submodules,
+        );
       }
     });
     _refreshSubjects();
@@ -389,6 +470,9 @@ class StudyRepository implements IStudyRepository {
         try {
           final remoteData = await _repositoryApiService.downloadRepository(
             subject.repositoryId!,
+            sourceUrl: subject.repositorySource == 'joss-red'
+                ? null
+                : subject.repositorySource,
           );
           final remoteVersion = remoteData['version'] as String;
 

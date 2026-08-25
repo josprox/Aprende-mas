@@ -1,6 +1,6 @@
 import 'package:aprende_mas/models/subject_models.dart';
 import 'package:aprende_mas/viewmodels/subject_viewmodel.dart';
-import 'package:aprende_mas/views/module_list_screen.dart';
+import 'package:aprende_mas/views/content_tree_screen.dart';
 import 'package:aprende_mas/views/repository_store_screen.dart';
 import 'package:aprende_mas/widgets/app_empty_state.dart';
 import 'package:aprende_mas/widgets/subject_card.dart';
@@ -169,8 +169,10 @@ class SubjectListScreen extends ConsumerWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                ModuleListScreen(subjectId: subject.id!),
+                            builder: (context) => ContentTreeScreen(
+                              subjectId: subject.id!,
+                              title: subject.name,
+                            ),
                           ),
                         );
                       },
