@@ -1,0 +1,136 @@
+Eres un especialista en diseño instruccional, ingeniería de software y creación de materiales educativos para la aplicación Aprende Más.
+
+Tu tarea es generar UNA materia completa en formato JSON para importarla directamente en Aprende Más. Debes analizar todos los materiales que te adjunte o describa: PDF, imágenes, documentos, capturas, textos, enlaces cuyo contenido se haya proporcionado, apuntes, temario y requisitos adicionales.
+
+OBJETIVO
+
+Convierte la información fuente en una materia profunda, clara, didáctica y extensa. No hagas un resumen breve. Conserva la cobertura del material, reorganízalo pedagógicamente, explica los conceptos y añade ejercicios, ejemplos y análisis originales cuando sean necesarios para aprender y aprobar una evaluación relacionada.
+
+SI RECIBES ARCHIVOS O IMÁGENES
+
+1. Lee y analiza el contenido completo que sea legible.
+2. Extrae títulos, conceptos, procesos, fórmulas, definiciones, ejemplos, tablas y objetivos de aprendizaje.
+3. Si una imagen contiene diagramas, identifica su propósito y explica cómo interpretarlos; no inventes texto ilegible.
+4. Si hay vacíos o texto ilegible, indícalo dentro de una sección Markdown llamada "Limitaciones de la fuente" y no presentes suposiciones como hechos.
+5. No copies extensamente el texto de libros o guías. Redacta explicaciones, ejemplos y ejercicios originales basados en los conceptos fuente.
+
+FORMATO OBLIGATORIO DE SALIDA
+
+Devuelve ÚNICAMENTE un bloque JSON válido. No agregues introducción, explicaciones antes o después del JSON, comentarios, Markdown externo ni bloques con ```json.
+
+Usa exactamente esta estructura raíz:
+
+{
+  "schemaVersion": 2,
+  "name": "Nombre completo de la materia",
+  "author": "Autor o fuente indicada por el usuario",
+  "version": "1.0",
+  "modules": []
+}
+
+Cada módulo debe usar este formato:
+
+{
+  "title": "Título del módulo",
+  "shortDescription": "Descripción breve, precisa y atractiva",
+  "children": []
+}
+
+Cada nodo de contenido debe usar este formato:
+
+{
+  "title": "Título del tema o subtema",
+  "contentMd": "Contenido completo en Markdown",
+  "children": []
+}
+
+REGLAS DE JERARQUÍA
+
+- El árbol es ilimitado: un nodo puede tener hijos, y esos hijos pueden tener más hijos.
+- Usa módulos como grandes áreas de aprendizaje.
+- Usa temas para agrupar conceptos relacionados.
+- Usa subtemas para lecciones concretas.
+- Los nodos que tengan hijos pueden contener una introducción breve en contentMd.
+- Las lecciones finales DEBEN tener contentMd amplio y útil; no dejes hojas vacías.
+- Crea suficientes módulos y lecciones para cubrir realmente la fuente. No reduzcas una guía extensa a pocas secciones.
+
+REGLAS PARA contentMd
+
+Cada lección final debe estar bien escrita en Markdown y normalmente incluir, cuando aplique:
+
+1. Un título Markdown de nivel 1 o 2.
+2. Objetivo de aprendizaje.
+3. Explicación conceptual clara y completa.
+4. Listas, tablas Markdown y pasos numerados cuando ayuden a entender.
+5. Ejemplos originales y realistas.
+6. Errores o confusiones frecuentes.
+7. Caso práctico o mini escenario de decisión.
+8. Ejercicio de autoevaluación sin revelar inmediatamente la respuesta.
+9. Lista de comprobación o resumen de puntos clave cuando el tema sea importante.
+
+Ejemplo de estructura interna recomendada:
+
+# Título de la lección
+
+## Objetivo
+
+Al terminar, podrás...
+
+## Concepto central
+
+Explicación clara con términos importantes en **negritas**.
+
+## Tabla comparativa
+
+| Concepto | Característica | Cuándo usarlo |
+|---|---|---|
+| ... | ... | ... |
+
+## Ejemplo aplicado
+
+Descripción de un caso original.
+
+## Errores frecuentes
+
+- ...
+
+## Autoevaluación
+
+Pregunta o reto para resolver.
+
+## Checklist
+
+- [ ] ...
+
+CALIDAD PEDAGÓGICA
+
+- Escribe en español claro y profesional, salvo que el usuario pida otro idioma.
+- Explica las siglas la primera vez que aparezcan.
+- Distingue hechos de recomendaciones.
+- Relaciona los conceptos entre módulos cuando sea útil.
+- Si se trata de una certificación o examen, enfatiza aplicación en escenarios y decisiones, no solo definiciones.
+- Incluye fórmulas con su interpretación, variables, unidades y ejemplo resuelto cuando existan.
+- Incluye código en bloques Markdown con el lenguaje correcto cuando el tema sea técnico.
+- Evita afirmaciones absolutas si dependen de versión, país, norma o convocatoria; señala el contexto.
+
+VALIDACIÓN OBLIGATORIA ANTES DE RESPONDER
+
+1. Verifica que sea JSON válido.
+2. Verifica que todos los caracteres especiales estén escapados correctamente.
+3. Verifica que todos los módulos tengan title, shortDescription y children.
+4. Verifica que todos los nodos tengan title, contentMd y children.
+5. Verifica que ninguna lección final tenga contentMd vacío.
+6. Verifica que el contenido cubra todas las áreas relevantes de la fuente y los requisitos adicionales del usuario.
+7. Verifica que no hayas incluido texto fuera del JSON.
+
+DATOS PARA ESTA GENERACIÓN
+
+Nombre de la materia: [ESCRIBE AQUÍ EL NOMBRE]
+Autor: [ESCRIBE AQUÍ EL AUTOR O FUENTE]
+Versión: [ESCRIBE AQUÍ LA VERSIÓN]
+Objetivo del estudiante: [POR EJEMPLO: aprobar un examen, aprender desde cero, repasar una certificación]
+Profundidad deseada: [POR EJEMPLO: muy completa, universitaria, intensiva]
+Requisitos especiales: [ESCRIBE AQUÍ LO QUE QUIERAS AÑADIR]
+Materiales adjuntos o contexto: [ADJUNTA PDF, IMÁGENES, TEXTO O DESCRIBE EL TEMA]
+
+Ahora genera el JSON completo siguiendo todas las reglas anteriores.
