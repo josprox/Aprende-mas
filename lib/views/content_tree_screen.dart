@@ -2,8 +2,11 @@ import 'package:aprende_mas/models/subject_models.dart';
 import 'package:aprende_mas/viewmodels/providers.dart';
 import 'package:aprende_mas/views/chat_screen.dart';
 import 'package:aprende_mas/views/quiz_screen.dart';
+import 'package:aprende_mas/views/code_runner_screen.dart';
+import 'package:aprende_mas/widgets/app_markdown_viewer.dart';
+import 'package:aprende_mas/widgets/text_size_sheet.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ContentTreeScreen extends ConsumerStatefulWidget {
@@ -23,11 +26,32 @@ class ContentTreeScreen extends ConsumerStatefulWidget {
 
 class _ContentTreeScreenState extends ConsumerState<ContentTreeScreen> {
   late Stream<List<ContentNode>> _childrenStream;
+  final ScrollController _scrollController = ScrollController();
+  bool _isFabVisible = true;
 
   @override
   void initState() {
     super.initState();
     _childrenStream = _createChildrenStream();
+    _scrollController.addListener(_handleScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_handleScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _handleScroll() {
+    if (!_scrollController.hasClients) return;
+    final isScrollingDown = _scrollController.position.userScrollDirection ==
+        ScrollDirection.reverse;
+    if (isScrollingDown && _isFabVisible) {
+      setState(() => _isFabVisible = false);
+    } else if (!isScrollingDown && !_isFabVisible) {
+      setState(() => _isFabVisible = true);
+    }
   }
 
   @override
@@ -78,31 +102,59 @@ class _ContentTreeScreenState extends ConsumerState<ContentTreeScreen> {
             widget.node?.moduleId != null;
         return Scaffold(
           floatingActionButton: showLearningActions
-              ? Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    FloatingActionButton.extended(
-                      heroTag: 'chat_${widget.node!.id}',
-                      onPressed: _openChat,
-                      icon: const Icon(Icons.auto_awesome_rounded),
-                      label: const Text('Preguntar a IA'),
-                      backgroundColor: scheme.secondaryContainer,
-                      foregroundColor: scheme.onSecondaryContainer,
+              ? AnimatedSlide(
+                  duration: const Duration(milliseconds: 250),
+                  offset: _isFabVisible ? Offset.zero : const Offset(0, 2),
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 250),
+                    opacity: _isFabVisible ? 1.0 : 0.0,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        FloatingActionButton.extended(
+                          heroTag: 'chat_${widget.node!.id}',
+                          onPressed: _openChat,
+                          icon: const Icon(Icons.auto_awesome_rounded),
+                          label: const Text('Preguntar a IA'),
+                          backgroundColor: scheme.secondaryContainer,
+                          foregroundColor: scheme.onSecondaryContainer,
+                        ),
+                        const SizedBox(height: 12),
+                        FloatingActionButton.extended(
+                          heroTag: 'quiz_${widget.node!.id}',
+                          onPressed: _openQuiz,
+                          icon: const Icon(Icons.quiz_rounded),
+                          label: const Text('Generar test'),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    FloatingActionButton.extended(
-                      heroTag: 'quiz_${widget.node!.id}',
-                      onPressed: _openQuiz,
-                      icon: const Icon(Icons.quiz_rounded),
-                      label: const Text('Generar test'),
-                    ),
-                  ],
+                  ),
                 )
               : null,
           body: CustomScrollView(
+            controller: _scrollController,
             slivers: [
-              SliverAppBar.large(title: Text(widget.title)),
+              SliverAppBar.large(
+                title: Text(widget.title),
+                actions: [
+                  if (widget.node != null) ...[
+                    IconButton(
+                      icon: const Icon(Icons.format_size_rounded),
+                      tooltip: 'Tamaño del texto',
+                      onPressed: () => TextSizeSheet.show(context),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.terminal_rounded),
+                      tooltip: 'Consola de código',
+                      onPressed: () => CodeRunnerScreen.open(
+                        context,
+                        title: 'Consola interactiva',
+                      ),
+                    ),
+                  ],
+                ],
+              ),
               if (snapshot.connectionState == ConnectionState.waiting)
                 const SliverFillRemaining(
                   child: Center(child: CircularProgressIndicator()),
@@ -161,22 +213,16 @@ class _ContentTreeScreenState extends ConsumerState<ContentTreeScreen> {
                 )
               else if (widget.node != null)
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 176),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 180),
                   sliver: SliverToBoxAdapter(
                     child: Card.filled(
                       color: scheme.surfaceContainerHighest,
                       child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            MarkdownBody(
-                              data: widget.node!.contentMd.isEmpty
-                                  ? 'Esta sección aún no tiene contenido.'
-                                  : widget.node!.contentMd,
-                              selectable: true,
-                            ),
-                          ],
+                        padding: const EdgeInsets.all(18),
+                        child: AppMarkdownViewer(
+                          data: widget.node!.contentMd.isEmpty
+                              ? 'Esta sección aún no tiene contenido.'
+                              : widget.node!.contentMd,
                         ),
                       ),
                     ),

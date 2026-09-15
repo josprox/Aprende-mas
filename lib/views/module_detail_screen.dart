@@ -2,10 +2,12 @@ import 'package:aprende_mas/models/subject_models.dart';
 import 'package:aprende_mas/viewmodels/providers.dart';
 import 'package:aprende_mas/views/chat_screen.dart';
 import 'package:aprende_mas/views/quiz_screen.dart';
+import 'package:aprende_mas/views/code_runner_screen.dart';
 import 'package:aprende_mas/widgets/app_empty_state.dart';
+import 'package:aprende_mas/widgets/app_markdown_viewer.dart';
+import 'package:aprende_mas/widgets/text_size_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ModuleDetailScreen extends ConsumerWidget {
@@ -67,6 +69,21 @@ class ModuleDetailScreen extends ConsumerWidget {
                     return Text(snapshot.data?.title ?? "Detalle del módulo");
                   },
                 ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.format_size_rounded),
+                    tooltip: 'Tamaño del texto',
+                    onPressed: () => TextSizeSheet.show(context),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.terminal_rounded),
+                    tooltip: 'Consola de código',
+                    onPressed: () => CodeRunnerScreen.open(
+                      context,
+                      title: 'Consola interactiva',
+                    ),
+                  ),
+                ],
               ),
               if (snapshot.connectionState == ConnectionState.waiting)
                 const SliverFillRemaining(
@@ -137,52 +154,8 @@ class ModuleDetailScreen extends ConsumerWidget {
                                     ],
                                   ),
                                   const SizedBox(height: 16),
-                                  MarkdownBody(
-                                    data: _formatMarkdownContent(submodule.contentMd),
-                                    selectable: true,
-                                    styleSheet:
-                                        MarkdownStyleSheet.fromTheme(
-                                          Theme.of(context),
-                                        ).copyWith(
-                                          p: Theme.of(context)
-                                              .textTheme
-                                              .bodyLarge
-                                              ?.copyWith(height: 1.45),
-                                          h1: Theme.of(context)
-                                              .textTheme
-                                              .headlineMedium
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w900,
-                                              ),
-                                          h2: Theme.of(context)
-                                              .textTheme
-                                              .headlineSmall
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w900,
-                                              ),
-                                          blockquoteDecoration: BoxDecoration(
-                                            color: scheme.secondaryContainer.withOpacity(0.5),
-                                            borderRadius: BorderRadius.circular(
-                                              16,
-                                            ),
-                                          ),
-                                          code: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                            fontFamily: 'monospace',
-                                            fontWeight: FontWeight.bold,
-                                            color: scheme.primary,
-                                            backgroundColor: scheme.primaryContainer.withOpacity(0.4),
-                                          ),
-                                          codeblockDecoration: BoxDecoration(
-                                            color:
-                                                scheme.surfaceContainerHighest,
-                                            borderRadius: BorderRadius.circular(
-                                              16,
-                                            ),
-                                            border: Border.all(
-                                              color: scheme.outlineVariant,
-                                            ),
-                                          ),
-                                        ),
+                                  AppMarkdownViewer(
+                                    data: submodule.contentMd,
                                   ),
                                 ],
                               ),
@@ -203,39 +176,5 @@ class ModuleDetailScreen extends ConsumerWidget {
         },
       ),
     );
-  }
-
-  String _formatMarkdownContent(String raw) {
-    if (raw.isEmpty) return raw;
-    String processed = raw;
-
-    // Normalize display math \[ ... \] to display code blocks
-    processed = processed.replaceAllMapped(
-      RegExp(r'\\\[(.*?)\\\]', dotAll: true),
-      (match) {
-        final math = match.group(1)?.trim() ?? '';
-        return '\n\n```\n$math\n```\n\n';
-      },
-    );
-
-    // Normalize inline math \( ... \) to clean inline math code pills
-    processed = processed.replaceAllMapped(
-      RegExp(r'\\\((.*?)\\\)'),
-      (match) {
-        final math = match.group(1)?.trim() ?? '';
-        return ' `$math` ';
-      },
-    );
-
-    // Format mermaid codeblocks into clean visual diagram callout blocks
-    processed = processed.replaceAllMapped(
-      RegExp(r'```mermaid\s*(.*?)```', dotAll: true),
-      (match) {
-        final code = match.group(1)?.trim() ?? '';
-        return '\n\n> 📊 **Diagrama / Flujo**\n```\n$code\n```\n\n';
-      },
-    );
-
-    return processed;
   }
 }

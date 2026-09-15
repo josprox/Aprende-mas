@@ -4,6 +4,8 @@ import 'package:aprende_mas/repositories/study_repository.dart';
 import 'package:aprende_mas/services/api/groq_api_service.dart';
 import 'package:aprende_mas/services/api/repository_api_service.dart';
 
+import 'package:aprende_mas/services/api/code_execution_service.dart';
+
 // API Service Provider
 final groqApiServiceProvider = Provider<GroqApiService>((ref) {
   return GroqApiService();
@@ -11,6 +13,10 @@ final groqApiServiceProvider = Provider<GroqApiService>((ref) {
 
 final repositoryApiServiceProvider = Provider<RepositoryApiService>((ref) {
   return RepositoryApiService();
+});
+
+final codeExecutionServiceProvider = Provider<CodeExecutionService>((ref) {
+  return CodeExecutionService();
 });
 
 // Repository Provider
