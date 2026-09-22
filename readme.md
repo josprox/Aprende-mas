@@ -1,4 +1,4 @@
-# Aprende Más
+﻿# Aprende Más
 
 > Una aplicación móvil para organizar materias, estudiar contenidos y reforzar el aprendizaje con evaluaciones e inteligencia artificial.
 
@@ -140,3 +140,11 @@ lib/
 ---
 
 Desarrollado para hacer que el material de estudio crezca al ritmo de quien aprende.
+
+---
+
+## ☕ Apoya el proyecto / Support
+
+Si este proyecto te ha sido de utilidad o deseas apoyar mi trabajo, ¡puedes invitarme un café!
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Fitted?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black&color=FFDD00)](https://buymeacoffee.com/jossestrely)

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'dart:io';
 import 'package:aprende_mas/models/subject_models.dart';
 import 'package:aprende_mas/viewmodels/providers.dart';
 import 'package:file_picker/file_picker.dart';
@@ -102,14 +101,13 @@ class SubjectNotifier extends StateNotifier<SubjectUiState> {
 
   Future<void> pickAndProcessFile() async {
     try {
-      final FilePickerResult? result = await FilePicker.pickFiles(
+      final PlatformFile? file = await FilePicker.pickFile(
         type: FileType.custom,
         allowedExtensions: ['json'],
       );
 
-      if (result != null) {
-        final File file = File(result.files.single.path!);
-        final String jsonString = await file.readAsString();
+      if (file != null) {
+        final String jsonString = await file.xFile.readAsString();
 
         if (state.currentFileAction == FileAction.import) {
           await _importMateria(jsonString);

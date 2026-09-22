@@ -435,6 +435,8 @@ class AppMarkdownViewer extends ConsumerWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
+    final bool isDark = theme.brightness == Brightness.dark;
+
     final markdownStyleSheet = MarkdownStyleSheet.fromTheme(theme).copyWith(
       p: theme.textTheme.bodyMedium?.copyWith(
         fontSize: 15.0 * scale,
@@ -487,6 +489,30 @@ class AppMarkdownViewer extends ConsumerWidget {
         backgroundColor: scheme.surfaceContainerHighest,
         color: scheme.primary,
       ),
+      // ─── Tabla: IntrinsicColumnWidth activa el scroll horizontal nativo ───
+      tableColumnWidth: const IntrinsicColumnWidth(),
+      tableHead: TextStyle(
+        fontSize: 13.0 * scale,
+        fontWeight: FontWeight.w700,
+        color: scheme.onPrimaryContainer,
+      ),
+      tableBody: TextStyle(
+        fontSize: 13.0 * scale,
+        height: 1.4,
+        color: scheme.onSurface,
+      ),
+      tableBorder: TableBorder.all(
+        color: scheme.outlineVariant.withValues(alpha: 0.5),
+        width: 1,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      tableCellsPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+      tableCellsDecoration: BoxDecoration(
+        color: isDark
+            ? scheme.surfaceContainerHighest.withValues(alpha: 0.25)
+            : scheme.surfaceContainerLowest,
+      ),
+      tableScrollbarThumbVisibility: true,
     );
 
     return MarkdownBody(
@@ -499,7 +525,6 @@ class AppMarkdownViewer extends ConsumerWidget {
         InlineMathSyntax(),
       ],
       builders: {
-        'table': ResponsiveTableElementBuilder(scale: scale),
         'pre': CodeBlockElementBuilder(scale: scale),
         'latex_inline': LatexInlineElementBuilder(scale: scale),
         'latex_display': LatexDisplayElementBuilder(scale: scale),

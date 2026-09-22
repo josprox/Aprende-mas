@@ -46,14 +46,13 @@ class BackupViewModel extends StateNotifier<BackupUiState> {
 
       // Use FilePicker to save
       final bytes = await file.readAsBytes();
-      final String? outputFile = await FilePicker.saveFile(
+      final Uri? outputFile = await FilePicker.saveFile(
         dialogTitle: 'Guardar copia de seguridad',
         fileName: 'backup_AprendeMas.db',
         bytes: bytes,
       );
 
       if (outputFile != null) {
-        await file.copy(outputFile);
         state = state.copyWith(
           isLoading: false,
           message: "Backup guardado exitosamente",
@@ -76,25 +75,23 @@ class BackupViewModel extends StateNotifier<BackupUiState> {
   Future<void> restoreBackup() async {
     state = state.copyWith(isLoading: true, message: "Restaurando datos...");
     try {
-      final FilePickerResult? result = await FilePicker.pickFiles();
+      final PlatformFile? pickedFile = await FilePicker.pickFile();
 
-      if (result != null) {
-        final path = result.files.single.path;
-        if (path != null) {
-          final dbFolder = await getApplicationDocumentsDirectory();
-          final file = File(p.join(dbFolder.path, 'aprende_mas.db'));
+      if (pickedFile != null) {
+        final dbFolder = await getApplicationDocumentsDirectory();
+        final file = File(p.join(dbFolder.path, 'aprende_mas.db'));
 
-          // 1. Close the current database connection to release the lock
-          await DatabaseHelper.instance.close();
+        // 1. Close the current database connection to release the lock
+        await DatabaseHelper.instance.close();
 
-          // 2. Overwrite the database file
-          await File(path).copy(file.path);
+        // 2. Read bytes from picked file and write to database file
+        final backupBytes = await pickedFile.xFile.readAsBytes();
+        await file.writeAsBytes(backupBytes);
 
-          state = state.copyWith(
-            isLoading: false,
-            message: "Datos restaurados correctamente.",
-          );
-        }
+        state = state.copyWith(
+          isLoading: false,
+          message: "Datos restaurados correctamente.",
+        );
       } else {
         state = state.copyWith(
           isLoading: false,

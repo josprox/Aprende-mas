@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:joss/joss.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -49,7 +50,7 @@ class CodeExecutionService {
       : _dio = dio ??
             Dio(
               BaseOptions(
-                baseUrl: 'https://emkc.org/api/v2/piston',
+                baseUrl: dotenv.env['PISTON_URL'] ?? 'https://emkc.org/api/v2/piston',
                 connectTimeout: const Duration(seconds: 12),
                 receiveTimeout: const Duration(seconds: 15),
               ),
@@ -158,6 +159,56 @@ $code
     return code;
   }
 
+  // Cache de la última versión de Joss descubierta en GitHub
+  static String? _cachedLatestJossVersion;
+
+  /// Consulta GitHub API para obtener la última versión estable de Joss.
+  /// Cachea el resultado para no repetir la petición en la misma sesión.
+  Future<String> _fetchLatestJossVersion() async {
+    if (_cachedLatestJossVersion != null) return _cachedLatestJossVersion!;
+    try {
+      final response = await _dio.get(
+        'https://api.github.com/repos/joss-language/Joss-Programming-Language/releases/latest',
+        options: Options(
+          headers: {'User-Agent': 'aprende-mas-app/1.0'},
+          receiveTimeout: const Duration(seconds: 8),
+          sendTimeout: const Duration(seconds: 8),
+        ),
+      );
+      final tag = (response.data as Map<String, dynamic>)['tag_name'] as String?;
+      if (tag != null && tag.isNotEmpty) {
+        // quitar la 'v' inicial si viene así: "v3.6.7.5" → "3.6.7.5"
+        _cachedLatestJossVersion = tag.replaceFirst(RegExp(r'^v', caseSensitive: false), '');
+        return _cachedLatestJossVersion!;
+      }
+    } catch (_) {}
+    // Fallback a la última versión conocida con soporte Android
+    return '3.6.7.5';
+  }
+
+  Future<String?> _findAndroidNativeJoss() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      final packageName = info.packageName;
+
+      for (final path in [
+        '/data/data/$packageName/lib/libjoss.so',
+        '/data/user/0/$packageName/lib/libjoss.so',
+      ]) {
+        final f = File(path);
+        if (f.existsSync()) return f.path;
+      }
+
+      // Buscar en directorio de librerías nativas de la aplicación
+      final libDir = Directory('/data/data/$packageName/lib');
+      if (libDir.existsSync()) {
+        final jossLib = File(p.join(libDir.path, 'libjoss.so'));
+        if (jossLib.existsSync()) return jossLib.path;
+      }
+    } catch (_) {}
+    return null;
+  }
+
   Future<Directory?> _getJossTargetDir() async {
     try {
       if (Platform.isAndroid || Platform.isIOS) {
@@ -182,35 +233,54 @@ $code
     if (normalizedLang == 'joss') {
       try {
         final targetDir = await _getJossTargetDir();
+        String? executablePath;
 
-        // En Android, si el binario no está copiado aún en targetDir, intentar extraerlo desde assets empaquetados
-        if (Platform.isAndroid && targetDir != null) {
-          final exe = File(p.join(targetDir.path, 'joss'));
-          if (!exe.existsSync()) {
-            try {
-              final assetData = await rootBundle.load('assets/joss/joss-android-arm64');
-              if (!targetDir.existsSync()) {
-                targetDir.createSync(recursive: true);
+        // 1. En Android, la vía oficial y permitida por SELinux (sin W^X error)
+        // es el binario empaquetado como biblioteca nativa (.so)
+        if (Platform.isAndroid) {
+          executablePath = await _findAndroidNativeJoss();
+          if (executablePath != null) {
+            Joss.setBinaryPath(executablePath);
+          }
+        }
+
+        // 2. Si no se encontró empaquetado nativamente, usar descarga dinámica
+        String jossVersion = '3.6.7.5';
+        if (executablePath == null) {
+          jossVersion = await _fetchLatestJossVersion();
+          await Joss.ensureInstalled(
+            targetVersion: jossVersion,
+            targetDir: targetDir,
+          );
+
+          if (targetDir != null &&
+              (Platform.isAndroid || Platform.isIOS || Platform.isLinux || Platform.isMacOS)) {
+            final exeName = Platform.isWindows ? 'joss.exe' : 'joss';
+            final jossExe = File(p.join(targetDir.path, exeName));
+            if (jossExe.existsSync()) {
+              for (final chmodCmd in ['/system/bin/chmod', '/bin/chmod', 'chmod']) {
+                try {
+                  final r = await Process.run(chmodCmd, ['755', jossExe.path]);
+                  if (r.exitCode == 0) break;
+                } catch (_) {}
               }
-              await exe.writeAsBytes(
-                assetData.buffer.asUint8List(assetData.offsetInBytes, assetData.lengthInBytes),
-                flush: true,
-              );
-              await Process.run('chmod', ['755', exe.path]);
-            } catch (_) {}
+              Joss.setBinaryPath(jossExe.path);
+              executablePath = jossExe.path;
+            }
           }
         }
 
         final result = await Joss.run(
           processedCode,
-          timeoutMs: 10000,
+          timeoutMs: 15000,
           targetDir: targetDir,
+          customBinaryPath: executablePath,
         );
         stopwatch.stop();
 
         return CodeExecutionResult(
           language: 'joss',
-          version: Joss.version,
+          version: jossVersion,
           stdout: result.stdout,
           stderr: result.stderr,
           exitCode: result.isSuccess ? 0 : 1,
@@ -223,6 +293,8 @@ $code
         return CodeExecutionResult.error('Error al ejecutar Joss: $e', language: 'joss');
       }
     }
+
+
 
     try {
       final response = await _dio.post(

@@ -1,6 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_code_editor/flutter_code_editor.dart';
+import 'package:flutter_highlight/themes/atom-one-dark.dart';
+import 'package:flutter_highlight/themes/vs.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:highlight/languages/dart.dart' as hl_dart;
+import 'package:highlight/languages/java.dart' as hl_java;
+import 'package:highlight/languages/javascript.dart' as hl_js;
+import 'package:highlight/languages/typescript.dart' as hl_ts;
+import 'package:highlight/languages/php.dart' as hl_php;
+import 'package:highlight/languages/python.dart' as hl_python;
+import 'package:highlight/languages/cpp.dart' as hl_cpp;
+import 'package:highlight/languages/cs.dart' as hl_cs;
+import 'package:highlight/languages/go.dart' as hl_go;
+import 'package:highlight/languages/rust.dart' as hl_rust;
+import 'package:highlight/languages/sql.dart' as hl_sql;
+import 'package:highlight/languages/bash.dart' as hl_bash;
 import 'package:aprende_mas/services/api/code_execution_service.dart';
 
 class CodeRunnerScreen extends StatefulWidget {
@@ -39,7 +54,7 @@ class CodeRunnerScreen extends StatefulWidget {
 
 class _CodeRunnerScreenState extends State<CodeRunnerScreen> {
   final CodeExecutionService _executionService = CodeExecutionService();
-  late final TextEditingController _codeController;
+  late CodeController _codeController;
   final TextEditingController _stdinController = TextEditingController();
 
   late String _selectedLanguage;
@@ -47,20 +62,21 @@ class _CodeRunnerScreenState extends State<CodeRunnerScreen> {
   CodeExecutionResult? _result;
   bool _showStdin = false;
 
-  final List<Map<String, String>> _availableLanguages = [
-    {'id': 'joss', 'label': 'Joss'},
-    {'id': 'dart', 'label': 'Dart'},
-    {'id': 'java', 'label': 'Java'},
-    {'id': 'php', 'label': 'PHP'},
-    {'id': 'python', 'label': 'Python 3'},
-    {'id': 'c', 'label': 'C (GCC)'},
-    {'id': 'cpp', 'label': 'C++ (G++)'},
-    {'id': 'javascript', 'label': 'JavaScript (Node)'},
-    {'id': 'typescript', 'label': 'TypeScript'},
-    {'id': 'csharp', 'label': 'C# (Mono)'},
-    {'id': 'go', 'label': 'Go'},
-    {'id': 'rust', 'label': 'Rust'},
-    {'id': 'sqlite3', 'label': 'SQL (SQLite)'},
+  final List<Map<String, dynamic>> _availableLanguages = [
+    {'id': 'joss', 'label': 'Joss', 'lang': null},
+    {'id': 'dart', 'label': 'Dart', 'lang': hl_dart.dart},
+    {'id': 'java', 'label': 'Java', 'lang': hl_java.java},
+    {'id': 'php', 'label': 'PHP', 'lang': hl_php.php},
+    {'id': 'python', 'label': 'Python 3', 'lang': hl_python.python},
+    {'id': 'c', 'label': 'C (GCC)', 'lang': hl_cpp.cpp},
+    {'id': 'cpp', 'label': 'C++ (G++)', 'lang': hl_cpp.cpp},
+    {'id': 'javascript', 'label': 'JavaScript (Node)', 'lang': hl_js.javascript},
+    {'id': 'typescript', 'label': 'TypeScript', 'lang': hl_ts.typescript},
+    {'id': 'csharp', 'label': 'C# (Mono)', 'lang': hl_cs.cs},
+    {'id': 'go', 'label': 'Go', 'lang': hl_go.go},
+    {'id': 'rust', 'label': 'Rust', 'lang': hl_rust.rust},
+    {'id': 'sqlite3', 'label': 'SQL (SQLite)', 'lang': hl_sql.sql},
+    {'id': 'bash', 'label': 'Bash', 'lang': hl_bash.bash},
   ];
 
   @override
@@ -70,12 +86,29 @@ class _CodeRunnerScreenState extends State<CodeRunnerScreen> {
     if (!_availableLanguages.any((lang) => lang['id'] == _selectedLanguage)) {
       _selectedLanguage = 'dart';
     }
-
     String code = widget.initialCode.trim();
     if (code.isEmpty) {
       code = _getDefaultSnippetForLanguage(_selectedLanguage);
     }
-    _codeController = TextEditingController(text: code);
+    _codeController = _buildController(code, _selectedLanguage);
+  }
+
+  CodeController _buildController(String code, String langId) {
+    final langDef = _availableLanguages
+        .firstWhere((l) => l['id'] == langId, orElse: () => {'lang': null})['lang'];
+    return CodeController(text: code, language: langDef);
+  }
+
+  void _switchLanguage(String newLang) {
+    final newCode = widget.initialCode.isEmpty
+        ? _getDefaultSnippetForLanguage(newLang)
+        : _codeController.text;
+    final newController = _buildController(newCode, newLang);
+    setState(() {
+      _selectedLanguage = newLang;
+      _codeController.dispose();
+      _codeController = newController;
+    });
   }
 
   @override
@@ -88,23 +121,82 @@ class _CodeRunnerScreenState extends State<CodeRunnerScreen> {
   String _getDefaultSnippetForLanguage(String lang) {
     switch (lang) {
       case 'joss':
-        return 'echo "¡Hola desde Joss en Aprende Más!\\n";\nint \$a = 15;\nint \$b = 27;\nint \$suma = \$a + \$b;\necho "Suma: " . \$suma . "\\n";\nfor (int \$i = 1; \$i <= 3; \$i++) {\n    echo "Iteración Joss: " . \$i . "\\n";\n}';
+        // Joss NO tiene for ni if/else — usa foreach, while y ternario con bloques
+        return r'''$mensaje = "¡Hola desde Joss en Aprende Más!"
+print($mensaje)
+
+$a = 15
+$b = 27
+$suma = $a + $b
+print("Suma: " . $suma)
+
+// Bucle con rango (1..3)
+foreach (1..3 as $i) {
+    print("Iteración: " . $i)
+}
+
+// Decisión con ternario (no existe if/else en Joss)
+($suma > 30) ? {
+    print("La suma es mayor a 30")
+} : {
+    print("La suma es menor o igual a 30")
+}''';
       case 'dart':
-        return 'void main() {\n  print("¡Hola desde Aprende Más con Dart!");\n  for (int i = 1; i <= 3; i++) {\n    print("Iteración: \$i");\n  }\n}';
+        return r'''void main() {
+  print('¡Hola desde Aprende Más con Dart!');
+  for (int i = 1; i <= 3; i++) {
+    print('Iteración: $i');
+  }
+}''';
       case 'java':
-        return 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("¡Hola desde Java!");\n        int a = 10, b = 20;\n        System.out.println("Suma: " + (a + b));\n    }\n}';
+        return '''public class Main {
+    public static void main(String[] args) {
+        System.out.println("¡Hola desde Java!");
+        int a = 10, b = 20;
+        System.out.println("Suma: " + (a + b));
+    }
+}''';
       case 'php':
-        return '<?php\necho "¡Hola desde PHP en Aprende Más!\\n";\n\$datos = ["Algoritmos", "Estructuras", "Calidad"];\nforeach (\$datos as \$item) {\n    echo "- " . \$item . "\\n";\n}';
+        return '''<?php
+echo "¡Hola desde PHP en Aprende Más!\\n";
+\$datos = ["Algoritmos", "Estructuras", "Calidad"];
+foreach (\$datos as \$item) {
+    echo "- " . \$item . "\\n";
+}''';
       case 'python':
-        return 'print("¡Hola desde Python 3!")\nvalores = [1, 2, 3, 4, 5]\ncuadrados = [x**2 for x in valores]\nprint(f"Cuadrados: {cuadrados}")';
+        return '''print("¡Hola desde Python 3!")
+valores = [1, 2, 3, 4, 5]
+cuadrados = [x**2 for x in valores]
+print(f"Cuadrados: {cuadrados}")''';
       case 'c':
-        return '#include <stdio.h>\n\nint main() {\n    printf("¡Hola desde C!\\n");\n    return 0;\n}';
+        return '''#include <stdio.h>
+
+int main() {
+    printf("¡Hola desde C!\\n");
+    return 0;
+}''';
       case 'cpp':
-        return '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "¡Hola desde C++ moderno!" << endl;\n    return 0;\n}';
+        return '''#include <iostream>
+using namespace std;
+
+int main() {
+    cout << "¡Hola desde C++ moderno!" << endl;
+    return 0;
+}''';
       case 'javascript':
-        return 'console.log("¡Hola desde JavaScript!");\nconst egel = { materia: "Ingeniería de Software", reactivos: 283 };\nconsole.log(JSON.stringify(egel, null, 2));';
+        return '''console.log("¡Hola desde JavaScript!");
+const egel = { materia: "Ingeniería de Software", reactivos: 283 };
+console.log(JSON.stringify(egel, null, 2));''';
       case 'sqlite3':
-        return 'CREATE TABLE materias (id INTEGER PRIMARY KEY, nombre TEXT);\nINSERT INTO materias (nombre) VALUES ("Requisitos"), ("Arquitectura"), ("Pruebas");\nSELECT * FROM materias;';
+        return '''CREATE TABLE materias (id INTEGER PRIMARY KEY, nombre TEXT);
+INSERT INTO materias (nombre) VALUES ("Requisitos"), ("Arquitectura"), ("Pruebas");
+SELECT * FROM materias;''';
+      case 'bash':
+        return r'''#!/bin/bash
+echo "¡Hola desde Bash!"
+for i in 1 2 3; do
+  echo "Iteración: $i"
+done''';
       default:
         return '// Escribe tu código aquí\n';
     }
@@ -112,20 +204,16 @@ class _CodeRunnerScreenState extends State<CodeRunnerScreen> {
 
   Future<void> _runCode() async {
     if (_isRunning) return;
-
     setState(() {
       _isRunning = true;
       _result = null;
     });
-
     FocusScope.of(context).unfocus();
-
     final result = await _executionService.executeCode(
       language: _selectedLanguage,
       code: _codeController.text,
       stdin: _stdinController.text,
     );
-
     if (mounted) {
       setState(() {
         _isRunning = false;
@@ -149,284 +237,323 @@ class _CodeRunnerScreenState extends State<CodeRunnerScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title ?? 'Probador de Código'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.cleaning_services_rounded),
-            tooltip: 'Restablecer código original',
-            onPressed: () {
-              setState(() {
-                _codeController.text = widget.initialCode.isNotEmpty
+    final editorTheme = isDark ? atomOneDarkTheme : vsTheme;
+    final editorBg = isDark ? const Color(0xFF1E1E2E) : const Color(0xFFFAFAFA);
+    final editorFg = isDark ? const Color(0xFFCDD6F4) : const Color(0xFF1E1E2E);
+    final consoleBg = isDark ? const Color(0xFF181825) : const Color(0xFFF5F5F5);
+
+    // CodeTheme DEBE envolver todo el árbol que contiene CodeField
+    // para que CodeTheme.of(context) lo resuelva como InheritedWidget.
+    return CodeTheme(
+      data: CodeThemeData(styles: editorTheme),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.title ?? 'Probador de Código'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.cleaning_services_rounded),
+              tooltip: 'Restablecer código original',
+              onPressed: () {
+                final fresh = widget.initialCode.isNotEmpty
                     ? widget.initialCode
                     : _getDefaultSnippetForLanguage(_selectedLanguage);
-                _result = null;
-              });
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.copy_rounded),
-            tooltip: 'Copiar código',
-            onPressed: () => _copyToClipboard(_codeController.text, 'Código copiado al portapapeles'),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Barra de selección de lenguaje y botón de ejecución
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: scheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _selectedLanguage,
-                        isExpanded: true,
-                        icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                        items: _availableLanguages.map((item) {
-                          return DropdownMenuItem<String>(
-                            value: item['id'],
-                            child: Row(
-                              children: [
-                                const Icon(Icons.code_rounded, size: 18),
-                                const SizedBox(width: 8),
-                                Text(
-                                  item['label']!,
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: _isRunning
-                            ? null
-                            : (val) {
-                                if (val != null && val != _selectedLanguage) {
-                                  setState(() {
-                                    _selectedLanguage = val;
-                                    if (widget.initialCode.isEmpty) {
-                                      _codeController.text = _getDefaultSnippetForLanguage(val);
-                                    }
-                                  });
-                                }
-                              },
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                FilledButton.icon(
-                  onPressed: _isRunning ? null : _runCode,
-                  icon: _isRunning
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.play_arrow_rounded),
-                  label: Text(_isRunning ? 'Ejecutando...' : 'Ejecutar'),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ],
+                setState(() {
+                  _codeController.text = fresh;
+                  _result = null;
+                });
+              },
             ),
-          ),
-
-          // Editor de Código
-          Expanded(
-            flex: 6,
-            child: Stack(
-              children: [
-                Container(
-                  color: const Color(0xFF1E1E2E), // Fondo estilo Catppuccin / VSCode Dark
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                  width: double.infinity,
-                  height: double.infinity,
-                  child: TextField(
-                    controller: _codeController,
-                    maxLines: null,
-                    expands: true,
-                    style: GoogleFonts.firaCode(
-                      fontSize: 13.5,
-                      color: const Color(0xFFCDD6F4),
-                      height: 1.5,
-                    ),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    keyboardType: TextInputType.multiline,
-                  ),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: IconButton(
-                    icon: Icon(
-                      _showStdin ? Icons.input_rounded : Icons.input_outlined,
-                      color: _showStdin ? scheme.primary : Colors.white54,
-                      size: 20,
-                    ),
-                    tooltip: 'Entrada estándar (stdin)',
-                    onPressed: () => setState(() => _showStdin = !_showStdin),
-                  ),
-                ),
-              ],
+            IconButton(
+              icon: const Icon(Icons.copy_rounded),
+              tooltip: 'Copiar código',
+              onPressed: () => _copyToClipboard(_codeController.text, 'Código copiado al portapapeles'),
             ),
-          ),
-
-          // Campo opcional de Entrada estándar (stdin)
-          if (_showStdin)
+          ],
+        ),
+        body: Column(
+          children: [
+            // ─── Barra de lenguaje + Ejecutar ───
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: scheme.surfaceContainerHighest,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
               child: Row(
                 children: [
-                  const Text('stdin: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                   Expanded(
-                    child: TextField(
-                      controller: _stdinController,
-                      style: GoogleFonts.firaCode(fontSize: 12),
-                      decoration: const InputDecoration(
-                        isDense: true,
-                        hintText: 'Valores separados por saltos de línea...',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: scheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
                       ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedLanguage,
+                          isExpanded: true,
+                          icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                          items: _availableLanguages.map((item) {
+                            return DropdownMenuItem<String>(
+                              value: item['id'] as String,
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.code_rounded, size: 18),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    item['label'] as String,
+                                    style: const TextStyle(fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: _isRunning
+                              ? null
+                              : (val) {
+                                  if (val != null && val != _selectedLanguage) {
+                                    _switchLanguage(val);
+                                  }
+                                },
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  FilledButton.icon(
+                    onPressed: _isRunning ? null : _runCode,
+                    icon: _isRunning
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.play_arrow_rounded),
+                    label: Text(_isRunning ? 'Ejecutando...' : 'Ejecutar'),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ],
               ),
             ),
 
-          // Divisor con título de consola
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            color: scheme.surfaceContainerLow,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.terminal_rounded, size: 18),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'CONSOLA DE SALIDA',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8),
-                    ),
-                    if (_result != null) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: _result!.isSuccess ? Colors.green.withValues(alpha: 0.2) : Colors.red.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(6),
+            // ─── Editor con Syntax Highlighting ───
+            Expanded(
+              flex: 6,
+              child: Stack(
+                children: [
+                  // CodeField con expands:true ocupa el Expanded directamente
+                  SizedBox.expand(
+                    child: CodeField(
+                      controller: _codeController,
+                      expands: true,
+                      textStyle: GoogleFonts.firaCode(
+                        fontSize: 13.5,
+                        color: editorFg,
+                        height: 1.55,
+                      ),
+                      gutterStyle: GutterStyle(
+                        showLineNumbers: true,
+                        textStyle: GoogleFonts.firaCode(
+                          fontSize: 11.5,
+                          color: isDark ? Colors.white30 : Colors.black38,
                         ),
-                        child: Text(
-                          _result!.isSuccess
-                              ? 'Éxito (${_result!.executionTime.inMilliseconds} ms)'
-                              : 'Código de salida ${_result!.exitCode}',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: _result!.isSuccess ? Colors.green[700] : Colors.red[700],
-                          ),
+                        background: isDark ? const Color(0xFF181825) : const Color(0xFFEEEEEE),
+                        width: 44,
+                      ),
+                      background: editorBg,
+                      decoration: const BoxDecoration(),
+                      onChanged: (_) {},
+                    ),
+                  ),
+                  // Botón stdin superpuesto
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: IconButton(
+                      icon: Icon(
+                        _showStdin ? Icons.input_rounded : Icons.input_outlined,
+                        color: _showStdin
+                            ? scheme.primary
+                            : (isDark ? Colors.white54 : Colors.black45),
+                        size: 20,
+                      ),
+                      tooltip: 'Entrada estándar (stdin)',
+                      onPressed: () => setState(() => _showStdin = !_showStdin),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ─── stdin opcional ───
+            if (_showStdin)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                color: scheme.surfaceContainerHighest,
+                child: Row(
+                  children: [
+                    const Text('stdin: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    Expanded(
+                      child: TextField(
+                        controller: _stdinController,
+                        style: GoogleFonts.firaCode(fontSize: 12),
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          hintText: 'Valores separados por saltos de línea...',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                         ),
                       ),
-                    ],
+                    ),
                   ],
                 ),
-                if (_result != null && (_result!.stdout.isNotEmpty || _result!.stderr.isNotEmpty))
-                  IconButton(
-                    icon: const Icon(Icons.copy_rounded, size: 16),
-                    tooltip: 'Copiar salida',
-                    onPressed: () {
-                      final out = _result!.stdout.isNotEmpty ? _result!.stdout : _result!.stderr;
-                      _copyToClipboard(out, 'Salida copiada');
-                    },
-                  ),
-              ],
-            ),
-          ),
+              ),
 
-          // Consola Terminal de Salida
-          Expanded(
-            flex: 4,
-            child: Container(
-              color: const Color(0xFF181825), // Fondo terminal oscuro
-              padding: const EdgeInsets.all(12),
-              width: double.infinity,
-              child: SingleChildScrollView(
-                child: _isRunning
-                    ? const Padding(
-                        padding: EdgeInsets.all(24.0),
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              CircularProgressIndicator(color: Colors.lightGreenAccent),
-                              SizedBox(height: 12),
-                              Text(
-                                'Compilando y ejecutando en servidor seguro...',
-                                style: TextStyle(color: Colors.white70, fontSize: 12),
-                              ),
-                            ],
+            // ─── Barra de consola ───
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              color: scheme.surfaceContainerLow,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.terminal_rounded, size: 18),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'CONSOLA DE SALIDA',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                      ),
+                      if (_result != null) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: _result!.isSuccess
+                                ? Colors.green.withValues(alpha: 0.2)
+                                : Colors.red.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            _result!.isSuccess
+                                ? 'Éxito (${_result!.executionTime.inMilliseconds} ms)'
+                                : 'Código de salida ${_result!.exitCode}',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: _result!.isSuccess ? Colors.green[700] : Colors.red[700],
+                            ),
                           ),
                         ),
-                      )
-                    : _result == null
-                        ? Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Text(
-                                'Presiona "Ejecutar" para compilar y correr el código.',
-                                style: GoogleFonts.firaCode(color: Colors.white38, fontSize: 12),
-                              ),
-                            ),
-                          )
-                        : SelectableText.rich(
-                            TextSpan(
+                      ],
+                    ],
+                  ),
+                  if (_result != null && (_result!.stdout.isNotEmpty || _result!.stderr.isNotEmpty))
+                    IconButton(
+                      icon: const Icon(Icons.copy_rounded, size: 16),
+                      tooltip: 'Copiar salida',
+                      onPressed: () {
+                        final out = _result!.stdout.isNotEmpty ? _result!.stdout : _result!.stderr;
+                        _copyToClipboard(out, 'Salida copiada');
+                      },
+                    ),
+                ],
+              ),
+            ),
+
+            // ─── Terminal de salida ───
+            Expanded(
+              flex: 4,
+              child: Container(
+                color: consoleBg,
+                padding: const EdgeInsets.all(12),
+                width: double.infinity,
+                child: SingleChildScrollView(
+                  child: _isRunning
+                      ? Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                if (_result!.compileOutput != null && _result!.compileOutput!.isNotEmpty)
-                                  TextSpan(
-                                    text: '[Compilador]\n${_result!.compileOutput}\n\n',
-                                    style: GoogleFonts.firaCode(color: Colors.amberAccent, fontSize: 12),
-                                  ),
-                                if (_result!.stdout.isNotEmpty)
-                                  TextSpan(
-                                    text: _result!.stdout,
-                                    style: GoogleFonts.firaCode(color: const Color(0xFFA6E3A1), fontSize: 12),
-                                  ),
-                                if (_result!.stderr.isNotEmpty)
-                                  TextSpan(
-                                    text: '\n[Error / stderr]\n${_result!.stderr}',
-                                    style: GoogleFonts.firaCode(color: const Color(0xFFF38BA8), fontSize: 12),
-                                  ),
-                                if (_result!.stdout.isEmpty && _result!.stderr.isEmpty && (_result!.compileOutput == null || _result!.compileOutput!.isEmpty))
-                                  TextSpan(
-                                    text: '(El programa finalizó correctamente sin imprimir texto)',
-                                    style: GoogleFonts.firaCode(color: Colors.white54, fontSize: 12),
-                                  ),
+                                CircularProgressIndicator(
+                                    color: isDark ? Colors.lightGreenAccent : scheme.primary),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Compilando y ejecutando en servidor seguro...',
+                                  style: TextStyle(
+                                      color: isDark ? Colors.white70 : Colors.black54,
+                                      fontSize: 12),
+                                ),
                               ],
                             ),
                           ),
+                        )
+                      : _result == null
+                          ? Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Text(
+                                  'Presiona "Ejecutar" para compilar y correr el código.',
+                                  style: GoogleFonts.firaCode(
+                                    color: isDark ? Colors.white38 : Colors.black38,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : SelectableText.rich(
+                              TextSpan(
+                                children: [
+                                  if (_result!.compileOutput != null &&
+                                      _result!.compileOutput!.isNotEmpty)
+                                    TextSpan(
+                                      text: '[Compilador]\n${_result!.compileOutput}\n\n',
+                                      style: GoogleFonts.firaCode(
+                                          color: isDark
+                                              ? Colors.amberAccent
+                                              : Colors.orange[800],
+                                          fontSize: 12),
+                                    ),
+                                  if (_result!.stdout.isNotEmpty)
+                                    TextSpan(
+                                      text: _result!.stdout,
+                                      style: GoogleFonts.firaCode(
+                                          color: isDark
+                                              ? const Color(0xFFA6E3A1)
+                                              : Colors.green[800],
+                                          fontSize: 12),
+                                    ),
+                                  if (_result!.stderr.isNotEmpty)
+                                    TextSpan(
+                                      text: '\n[Error / stderr]\n${_result!.stderr}',
+                                      style: GoogleFonts.firaCode(
+                                          color: isDark
+                                              ? const Color(0xFFF38BA8)
+                                              : Colors.red[700],
+                                          fontSize: 12),
+                                    ),
+                                  if (_result!.stdout.isEmpty &&
+                                      _result!.stderr.isEmpty &&
+                                      (_result!.compileOutput == null ||
+                                          _result!.compileOutput!.isEmpty))
+                                    TextSpan(
+                                      text: '(El programa finalizó correctamente sin imprimir texto)',
+                                      style: GoogleFonts.firaCode(
+                                          color: isDark ? Colors.white54 : Colors.black45,
+                                          fontSize: 12),
+                                    ),
+                                ],
+                              ),
+                            ),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
