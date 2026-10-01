@@ -155,34 +155,87 @@ class SubjectListScreen extends ConsumerWidget {
               ),
             )
           else
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 104),
-              sliver: SliverList.builder(
-                itemCount: state.subjects.length,
-                itemBuilder: (context, index) {
-                  final subject = state.subjects[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: SubjectCard(
-                      subject: subject,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ContentTreeScreen(
-                              subjectId: subject.id!,
-                              title: subject.name,
-                            ),
+            SliverToBoxAdapter(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1400),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 104),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final width = constraints.maxWidth;
+                        final crossAxisCount = width >= 1100
+                            ? 3
+                            : (width >= 640 ? 2 : 1);
+
+                        if (crossAxisCount == 1) {
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: state.subjects.length,
+                            itemBuilder: (context, index) {
+                              final subject = state.subjects[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: SubjectCard(
+                                  subject: subject,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ContentTreeScreen(
+                                          subjectId: subject.id!,
+                                          title: subject.name,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  onOptionsTap: () {
+                                    notifier.onSubjectLongPress(subject);
+                                    showOptionsSheet(subject);
+                                  },
+                                ),
+                              );
+                            },
+                          );
+                        }
+
+                        return GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: crossAxisCount,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            mainAxisExtent: 130,
                           ),
+                          itemCount: state.subjects.length,
+                          itemBuilder: (context, index) {
+                            final subject = state.subjects[index];
+                            return SubjectCard(
+                              subject: subject,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ContentTreeScreen(
+                                      subjectId: subject.id!,
+                                      title: subject.name,
+                                    ),
+                                  ),
+                                );
+                              },
+                              onOptionsTap: () {
+                                notifier.onSubjectLongPress(subject);
+                                showOptionsSheet(subject);
+                              },
+                            );
+                          },
                         );
                       },
-                      onOptionsTap: () {
-                        notifier.onSubjectLongPress(subject);
-                        showOptionsSheet(subject);
-                      },
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
             ),
         ],

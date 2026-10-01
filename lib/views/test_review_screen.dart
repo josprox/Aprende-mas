@@ -39,28 +39,36 @@ class TestReviewScreen extends ConsumerWidget {
               SliverAppBar.large(
                 title: Text(state.module?.title ?? "Revisión"),
               ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    _TestResultHeader(
-                      title: state.module?.title ?? "Examen",
-                      score: state.attempt!.score,
-                      correct: state.attempt!.correctAnswers,
-                      total: state.attempt!.totalQuestions,
+              SliverToBoxAdapter(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 840),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _TestResultHeader(
+                            title: state.module?.title ?? "Examen",
+                            score: state.attempt!.score,
+                            correct: state.attempt!.correctAnswers,
+                            total: state.attempt!.totalQuestions,
+                          ),
+                          const SizedBox(height: 16),
+                          ...state.reviewedQuestions.asMap().entries.map(
+                            (entry) =>
+                                _ReviewQuestionCard(
+                                      index: entry.key + 1,
+                                      reviewedQuestion: entry.value,
+                                    )
+                                    .animate(delay: (35 * entry.key).ms)
+                                    .fadeIn()
+                                    .slideY(begin: 0.04, end: 0),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    ...state.reviewedQuestions.asMap().entries.map(
-                      (entry) =>
-                          _ReviewQuestionCard(
-                                index: entry.key + 1,
-                                reviewedQuestion: entry.value,
-                              )
-                              .animate(delay: (35 * entry.key).ms)
-                              .fadeIn()
-                              .slideY(begin: 0.04, end: 0),
-                    ),
-                  ]),
+                  ),
                 ),
               ),
             ],

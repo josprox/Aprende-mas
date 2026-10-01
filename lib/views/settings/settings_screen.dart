@@ -21,108 +21,115 @@ class SettingsScreen extends ConsumerWidget {
       body: CustomScrollView(
         slivers: [
           const SliverAppBar.large(title: Text("Ajustes")),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _SettingsGroupCard(
-                  title: "Cuenta",
-                  children: [
-                    _SettingsItem(
-                      headline: authState.isLoggedIn
-                          ? (authState.user?.fullName ?? "Cuenta activa")
-                          : "Iniciar sesión en Joss Red",
-                      supportingText: authState.isLoggedIn
-                          ? "@${authState.user?.username ?? ''} (${authState.user?.email ?? ''})"
-                          : "Conéctate para sincronizar y descargar materias.",
-                      icon: authState.isLoggedIn
-                          ? Icons.person_rounded
-                          : Icons.login_rounded,
-                      onTap: () {
-                        if (authState.isLoggedIn) {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            builder: (_) => const UserProfileDialog(),
-                          );
-                        } else {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => LoginScreen(
-                                onSuccess: () {
-                                  ref
-                                      .read(
-                                        repositoryStoreViewModelProvider
-                                            .notifier,
-                                      )
-                                      .fetchRepositories();
-                                },
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                _SettingsGroupCard(
-                  title: "Inteligencia artificial",
-                  children: [
-                    _SettingsItem(
-                      headline: "Llave personal de Groq",
-                      supportingText:
-                          "Úsala directamente o inicia sesión para usar el servicio de Joss Red.",
-                      icon: Icons.key_rounded,
-                      onTap: () => showDialog(
-                        context: context,
-                        builder: (_) => const _GroqKeyDialog(),
+          SliverToBoxAdapter(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 800),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 48),
+                  child: Column(
+                    children: [
+                      _SettingsGroupCard(
+                        title: "Cuenta",
+                        children: [
+                          _SettingsItem(
+                            headline: authState.isLoggedIn
+                                ? (authState.user?.fullName ?? "Cuenta activa")
+                                : "Iniciar sesión en Joss Red",
+                            supportingText: authState.isLoggedIn
+                                ? "@${authState.user?.username ?? ''} (${authState.user?.email ?? ''})"
+                                : "Conéctate para sincronizar y descargar materias.",
+                            icon: authState.isLoggedIn
+                                ? Icons.person_rounded
+                                : Icons.login_rounded,
+                            onTap: () {
+                              if (authState.isLoggedIn) {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  builder: (_) => const UserProfileDialog(),
+                                );
+                              } else {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => LoginScreen(
+                                      onSuccess: () {
+                                        ref
+                                            .read(
+                                              repositoryStoreViewModelProvider
+                                                  .notifier,
+                                            )
+                                            .fetchRepositories();
+                                      },
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                _SettingsGroupCard(
-                  title: "Datos",
-                  children: [
-                    _SettingsItem(
-                      headline: "Copia de seguridad",
-                      supportingText:
-                          "Exporta o restaura materias, tests y progreso.",
-                      icon: Icons.cloud_sync_rounded,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const BackupRestoreScreen(),
+                      const SizedBox(height: 18),
+                      _SettingsGroupCard(
+                        title: "Inteligencia artificial",
+                        children: [
+                          _SettingsItem(
+                            headline: "Llave personal de Groq",
+                            supportingText:
+                                "Úsala directamente o inicia sesión para usar el servicio de Joss Red.",
+                            icon: Icons.key_rounded,
+                            onTap: () => showDialog(
+                              context: context,
+                              builder: (_) => const _GroqKeyDialog(),
+                            ),
                           ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                _SettingsGroupCard(
-                  title: "Aplicación",
-                  children: [
-                    _SettingsItem(
-                      headline: "Información y legal",
-                      supportingText:
-                          "Versión, privacidad, términos y soporte.",
-                      icon: Icons.verified_user_rounded,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const LegalInfoScreen(),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      _SettingsGroupCard(
+                        title: "Datos",
+                        children: [
+                          _SettingsItem(
+                            headline: "Copia de seguridad",
+                            supportingText:
+                                "Exporta o restaura materias, tests y progreso.",
+                            icon: Icons.cloud_sync_rounded,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const BackupRestoreScreen(),
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
-                  ],
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      _SettingsGroupCard(
+                        title: "Aplicación",
+                        children: [
+                          _SettingsItem(
+                            headline: "Información y legal",
+                            supportingText:
+                                "Versión, privacidad, términos y soporte.",
+                            icon: Icons.verified_user_rounded,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const LegalInfoScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ]),
+              ),
             ),
           ),
         ],

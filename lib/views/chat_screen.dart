@@ -4,16 +4,50 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ChatScreen extends ConsumerStatefulWidget {
+class ChatScreen extends StatelessWidget {
   final int moduleId;
 
   const ChatScreen({super.key, required this.moduleId});
 
   @override
-  ConsumerState<ChatScreen> createState() => _ChatScreenState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Asistente IA"),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: IconButton.filledTonal(
+              tooltip: "Asistente del módulo",
+              onPressed: null,
+              icon: Icon(Icons.auto_awesome_rounded),
+            ),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 860),
+            child: EmbeddedChatView(moduleId: moduleId),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _ChatScreenState extends ConsumerState<ChatScreen> {
+/// Widget reutilizable para incrustar el chat en pantalla completa o paneles divididos (Split View)
+class EmbeddedChatView extends ConsumerStatefulWidget {
+  final int moduleId;
+
+  const EmbeddedChatView({super.key, required this.moduleId});
+
+  @override
+  ConsumerState<EmbeddedChatView> createState() => _EmbeddedChatViewState();
+}
+
+class _EmbeddedChatViewState extends ConsumerState<EmbeddedChatView> {
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -50,57 +84,39 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       },
     );
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Asistente IA"),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: IconButton.filledTonal(
-              tooltip: "Asistente del módulo",
-              onPressed: null,
-              icon: Icon(Icons.auto_awesome_rounded),
+    return Column(
+      children: [
+        Expanded(
+          child: DecoratedBox(
+            decoration: BoxDecoration(color: scheme.surface),
+            child: ListView.separated(
+              controller: _scrollController,
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+              itemCount:
+                  chatState.chatHistory.length +
+                  (chatState.isModelThinking &&
+                          (chatState.chatHistory.isEmpty ||
+                              !chatState.chatHistory.last.isPending)
+                      ? 1
+                      : 0),
+              separatorBuilder: (context, index) => const SizedBox(height: 14),
+              itemBuilder: (context, index) {
+                if (index < chatState.chatHistory.length) {
+                  final message = chatState.chatHistory[index];
+                  return _MessageBubble(message: message);
+                }
+                return const _ThinkingIndicator();
+              },
             ),
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: DecoratedBox(
-                decoration: BoxDecoration(color: scheme.surface),
-                child: ListView.separated(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-                  itemCount:
-                      chatState.chatHistory.length +
-                      (chatState.isModelThinking &&
-                              (chatState.chatHistory.isEmpty ||
-                                  !chatState.chatHistory.last.isPending)
-                          ? 1
-                          : 0),
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 14),
-                  itemBuilder: (context, index) {
-                    if (index < chatState.chatHistory.length) {
-                      final message = chatState.chatHistory[index];
-                      return _MessageBubble(message: message);
-                    }
-                    return const _ThinkingIndicator();
-                  },
-                ),
-              ),
-            ),
-            _ChatInput(
-              currentInput: chatState.currentInput,
-              onInputChanged: notifier.onInputChanged,
-              onSend: notifier.onSendMessage,
-              isEnabled: !chatState.isModelThinking,
-            ),
-          ],
         ),
-      ),
+        _ChatInput(
+          currentInput: chatState.currentInput,
+          onInputChanged: notifier.onInputChanged,
+          onSend: notifier.onSendMessage,
+          isEnabled: !chatState.isModelThinking,
+        ),
+      ],
     );
   }
 }
@@ -160,26 +176,22 @@ class _MessageBubble extends StatelessWidget {
                           color: contentColor,
                           height: 1.4,
                         ),
-                        code: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          backgroundColor: scheme.surfaceContainerHighest,
-                          color: scheme.onSurface,
-                          fontFamily: 'monospace',
-                        ),
+                        code: const TextStyle(fontFamily: "monospace"),
                         codeblockDecoration: BoxDecoration(
                           color: scheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                 ),
         ),
       ),
-    ).animate().fadeIn(duration: 180.ms).slideY(begin: 0.04, end: 0);
+    ).animate().fadeIn(duration: 200.ms).slideY(begin: 0.08, end: 0);
   }
 }
 
 class _ChatInput extends StatefulWidget {
   final String currentInput;
-  final Function(String) onInputChanged;
+  final ValueChanged<String> onInputChanged;
   final VoidCallback onSend;
   final bool isEnabled;
 
@@ -207,10 +219,7 @@ class _ChatInputState extends State<_ChatInput> {
   void didUpdateWidget(covariant _ChatInput oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.currentInput != _controller.text) {
-      _controller.value = TextEditingValue(
-        text: widget.currentInput,
-        selection: TextSelection.collapsed(offset: widget.currentInput.length),
-      );
+      _controller.text = widget.currentInput;
     }
   }
 
@@ -227,11 +236,10 @@ class _ChatInputState extends State<_ChatInput> {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainer.withValues(alpha: 0.96),
+        color: scheme.surfaceContainer.withValues(alpha: 0.94),
         border: Border(top: BorderSide(color: scheme.outlineVariant)),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
             child: TextField(

@@ -66,8 +66,11 @@ class QuizScreen extends ConsumerWidget {
             state.currentQuestionIndex,
           );
 
-          return Column(
-            children: [
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 820),
+              child: Column(
+                children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                 child: ClipRRect(
@@ -198,10 +201,12 @@ class QuizScreen extends ConsumerWidget {
                 ),
               ),
             ],
-          );
-        },
-      ),
-    );
+          ),
+        ),
+      );
+    },
+  ),
+);
   }
 }
 

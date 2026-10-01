@@ -27,16 +27,52 @@ class GradesScreen extends ConsumerWidget {
                 ),
               )
             else
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-                sliver: SliverList.builder(
-                  itemCount: state.completedTests.length,
-                  itemBuilder: (context, index) {
-                    return _TestResultCard(test: state.completedTests[index])
-                        .animate(delay: (35 * index).ms)
-                        .fadeIn()
-                        .slideY(begin: 0.04, end: 0);
-                  },
+              SliverToBoxAdapter(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1400),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 48),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final width = constraints.maxWidth;
+                          final cols = width >= 1100 ? 3 : (width >= 640 ? 2 : 1);
+
+                          if (cols == 1) {
+                            return ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: state.completedTests.length,
+                              itemBuilder: (context, index) {
+                                return _TestResultCard(test: state.completedTests[index])
+                                    .animate(delay: (35 * index).ms)
+                                    .fadeIn()
+                                    .slideY(begin: 0.04, end: 0);
+                              },
+                            );
+                          }
+
+                          return GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: cols,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                              mainAxisExtent: 140,
+                            ),
+                            itemCount: state.completedTests.length,
+                            itemBuilder: (context, index) {
+                              return _TestResultCard(test: state.completedTests[index])
+                                  .animate(delay: (35 * index).ms)
+                                  .fadeIn()
+                                  .slideY(begin: 0.04, end: 0);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
                 ),
               ),
           ],

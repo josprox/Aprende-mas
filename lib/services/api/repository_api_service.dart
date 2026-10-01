@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:aprende_mas/models/repository_models.dart';
@@ -103,13 +104,31 @@ class RepositoryApiService {
       );
 
       final root = external ? sourceUrl.replaceFirst(RegExp(r'/$'), '') : '';
-      final response = await (external ? Dio() : _dio).get(
-        external
-            ? '$root/repositories/$id/download'
-            : '/repositories/$id/download',
-        options: options,
-      );
-      return response.data as Map<String, dynamic>;
+      Response response;
+      try {
+        response = await (external ? Dio() : _dio).get(
+          external
+              ? '$root/repositories/$id/download'
+              : '/repositories/$id/download',
+          options: options,
+        );
+      } catch (e) {
+        if (!external) {
+          // Fallback to public catalog download endpoint
+          final publicBase = dotenv.env['JOSSRED']?.trim() ?? 'https://joss.red';
+          final cleanBase = publicBase.endsWith('/')
+              ? publicBase.substring(0, publicBase.length - 1)
+              : publicBase;
+          response = await Dio().get('$cleanBase/catalog/download/$id');
+        } else {
+          rethrow;
+        }
+      }
+      final rawData = response.data;
+      if (rawData is String) {
+        return jsonDecode(rawData) as Map<String, dynamic>;
+      }
+      return rawData as Map<String, dynamic>;
     } catch (e) {
       throw Exception('Failed to download repository: $e');
     }

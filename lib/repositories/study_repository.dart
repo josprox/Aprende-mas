@@ -474,7 +474,11 @@ class StudyRepository implements IStudyRepository {
                 ? null
                 : subject.repositorySource,
           );
-          final remoteVersion = remoteData['version'] as String;
+          final rawVersion = remoteData['version'] ?? remoteData['Version'];
+          if (rawVersion == null) {
+            continue;
+          }
+          final remoteVersion = rawVersion.toString();
 
           if (_isNewerVersion(subject.version, remoteVersion)) {
             await updateSubjectFromJson(subject.id!, jsonEncode(remoteData));

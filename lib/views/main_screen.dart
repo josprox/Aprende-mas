@@ -73,20 +73,46 @@ class _MainScreenState extends State<MainScreen> {
         final isDesktop = constraints.maxWidth >= 640;
 
         if (isDesktop) {
+          final isWide = constraints.maxWidth >= 1024;
           return Scaffold(
             body: Row(
               children: [
                 NavigationRail(
+                  extended: isWide,
+                  minExtendedWidth: 200,
+                  minWidth: 76,
                   selectedIndex: _currentIndex,
                   onDestinationSelected: _onNavigationSelected,
-                  labelType: NavigationRailLabelType.all,
+                  labelType: isWide ? NavigationRailLabelType.none : NavigationRailLabelType.all,
                   groupAlignment: -0.85,
                   leading: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Icon(
-                      Icons.school_rounded,
-                      size: 32,
-                      color: scheme.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: scheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(
+                            Icons.school_rounded,
+                            size: 26,
+                            color: scheme.onPrimaryContainer,
+                          ),
+                        ),
+                        if (isWide) ...[
+                          const SizedBox(width: 12),
+                          Text(
+                            'Aprende Más',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                  color: scheme.primary,
+                                ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                   destinations: const [
