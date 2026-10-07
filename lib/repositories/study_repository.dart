@@ -36,20 +36,48 @@ class StudyRepository implements IStudyRepository {
 
   // Stream Controllers
   final _subjectsController = StreamController<List<Subject>>.broadcast();
+  final _pendingTestsController =
+      StreamController<List<TestAttemptWithModule>>.broadcast();
   final _completedTestsController =
       StreamController<List<TestAttemptWithModule>>.broadcast();
 
   StudyRepository(this._groqApiService, this._repositoryApiService) {
     _refreshSubjects();
+    _emitPendingTests();
     _emitCompletedTests();
+  }
+
+  Future<void> _emitPendingTests() async {
+    final db = await _dbHelper.database;
+    final results = await db.rawQuery('''
+      SELECT t.*, COALESCE(cn.title, m.title) as module_title 
+      FROM test_attempts t
+      INNER JOIN modules m ON t.module_id = m.id
+      LEFT JOIN content_nodes cn ON t.node_id = cn.id
+      WHERE t.status = 'PENDING'
+      ORDER BY t.timestamp DESC
+    ''');
+
+    final list = results.map((e) {
+      final attempt = TestAttempt.fromMap(e);
+      return TestAttemptWithModule(
+        attempt: attempt,
+        moduleTitle: e['module_title'] as String,
+      );
+    }).toList();
+
+    if (!_pendingTestsController.isClosed) {
+      _pendingTestsController.add(list);
+    }
   }
 
   Future<void> _emitCompletedTests() async {
     final db = await _dbHelper.database;
     final results = await db.rawQuery('''
-      SELECT t.*, m.title as module_title 
+      SELECT t.*, COALESCE(cn.title, m.title) as module_title 
       FROM test_attempts t
       INNER JOIN modules m ON t.module_id = m.id
+      LEFT JOIN content_nodes cn ON t.node_id = cn.id
       WHERE t.status = 'COMPLETED'
       ORDER BY t.timestamp DESC
     ''');
@@ -62,7 +90,9 @@ class StudyRepository implements IStudyRepository {
       );
     }).toList();
 
-    _completedTestsController.add(list);
+    if (!_completedTestsController.isClosed) {
+      _completedTestsController.add(list);
+    }
   }
 
   Future<void> _refreshSubjects() async {
@@ -130,28 +160,70 @@ class StudyRepository implements IStudyRepository {
   }
 
   @override
-  Future<List<Question>> getOrCreateQuestionsForModule(int moduleId) async {
+  Future<ContentNode?> getContentNodeById(int nodeId) async {
     final db = await _dbHelper.database;
     final maps = await db.query(
-      'questions',
-      where: 'module_id = ?',
-      whereArgs: [moduleId],
+      'content_nodes',
+      where: 'id = ?',
+      whereArgs: [nodeId],
     );
+    if (maps.isNotEmpty) return ContentNode.fromMap(maps.first);
+    return null;
+  }
+
+  @override
+  Future<List<Question>> getOrCreateQuestionsForModule(
+    int moduleId, {
+    int? nodeId,
+    String? lessonContent,
+    String? lessonTitle,
+  }) async {
+    final db = await _dbHelper.database;
+
+    // Check if questions already exist for this specific node or module
+    final List<Map<String, dynamic>> maps = nodeId != null
+        ? await db.query(
+            'questions',
+            where: 'node_id = ?',
+            whereArgs: [nodeId],
+          )
+        : await db.query(
+            'questions',
+            where: 'module_id = ? AND node_id IS NULL',
+            whereArgs: [moduleId],
+          );
 
     if (maps.isNotEmpty) {
       return maps.map((e) => Question.fromMap(e)).toList();
     }
 
-    // Generate questions via AI
-    final submodulesMap = await db.query(
-      'content_nodes',
-      where: 'module_id = ? AND content_md != ?',
-      whereArgs: [moduleId, ''],
-    );
-    final submodules = submodulesMap.map((e) => Submodule.fromMap(e)).toList();
-    final fullContent = submodules.map((s) => s.contentMd).join("\n\n");
+    // Determine content to generate questions from
+    String fullContent = '';
+    if (lessonContent != null && lessonContent.trim().isNotEmpty) {
+      fullContent = lessonContent.trim();
+    } else if (nodeId != null) {
+      final node = await getContentNodeById(nodeId);
+      if (node != null && node.contentMd.trim().isNotEmpty) {
+        fullContent = node.contentMd.trim();
+      }
+    }
+
+    if (fullContent.isEmpty) {
+      final submodulesMap = await db.query(
+        'content_nodes',
+        where: 'module_id = ? AND content_md != ?',
+        whereArgs: [moduleId, ''],
+      );
+      final submodules = submodulesMap.map((e) => Submodule.fromMap(e)).toList();
+      fullContent = submodules.map((s) => s.contentMd).join("\n\n");
+    }
 
     if (fullContent.isEmpty) return [];
+
+    // Safety guard against TPM limit: max 12,000 characters
+    if (fullContent.length > 12000) {
+      fullContent = '${fullContent.substring(0, 12000)}\n\n[...contenido resumido para respetar límites de IA...]';
+    }
 
     try {
       final generatedQuestions = await _groqApiService.generateQuestions(
@@ -162,6 +234,7 @@ class StudyRepository implements IStudyRepository {
       for (final q in generatedQuestions) {
         await db.insert('questions', {
           'module_id': moduleId,
+          if (nodeId != null) 'node_id': nodeId,
           'question_text': q.questionText,
           'option_a': q.optionA,
           'option_b': q.optionB,
@@ -172,11 +245,9 @@ class StudyRepository implements IStudyRepository {
         });
       }
 
-      final newMaps = await db.query(
-        'questions',
-        where: 'module_id = ?',
-        whereArgs: [moduleId],
-      );
+      final newMaps = nodeId != null
+          ? await db.query('questions', where: 'node_id = ?', whereArgs: [nodeId])
+          : await db.query('questions', where: 'module_id = ? AND node_id IS NULL', whereArgs: [moduleId]);
       return newMaps.map((e) => Question.fromMap(e)).toList();
     } catch (e) {
       print("Error generating questions: $e");
@@ -196,29 +267,36 @@ class StudyRepository implements IStudyRepository {
   }
 
   @override
-  Future<int> createTestAttempt(int moduleId, int totalQuestions) async {
+  Future<int> createTestAttempt(
+    int moduleId,
+    int totalQuestions, {
+    int? nodeId,
+  }) async {
     final db = await _dbHelper.database;
     final now = DateTime.now().millisecondsSinceEpoch;
     final id = await db.insert('test_attempts', {
       'module_id': moduleId,
+      if (nodeId != null) 'node_id': nodeId,
       'timestamp': now,
       'score': 0.0,
       'status': 'PENDING',
       'total_questions': totalQuestions,
       'correct_answers': 0,
       'current_question_index': 0,
-      // Add missing columns if schema changed, for now assuming these match
     });
+    await _emitPendingTests();
     return id;
   }
 
   @override
-  Future<TestAttempt?> findPendingTest(int moduleId) async {
+  Future<TestAttempt?> findPendingTest(int moduleId, {int? nodeId}) async {
     final db = await _dbHelper.database;
     final maps = await db.query(
       'test_attempts',
-      where: 'module_id = ? AND status = ?',
-      whereArgs: [moduleId, 'PENDING'],
+      where: nodeId != null
+          ? 'node_id = ? AND status = ?'
+          : 'module_id = ? AND node_id IS NULL AND status = ?',
+      whereArgs: [if (nodeId != null) nodeId else moduleId, 'PENDING'],
       limit: 1,
     );
     if (maps.isNotEmpty) {
@@ -237,7 +315,10 @@ class StudyRepository implements IStudyRepository {
       whereArgs: [attempt.id],
     );
     if (attempt.status == 'COMPLETED') {
-      _emitCompletedTests();
+      await _emitCompletedTests();
+      await _emitPendingTests();
+    } else {
+      await _emitPendingTests();
     }
   }
 
@@ -245,7 +326,7 @@ class StudyRepository implements IStudyRepository {
   Future<void> finishTestAttempt(TestAttempt attempt) async {
     final updatedAttempt = attempt.copyWith(status: 'COMPLETED');
     await updateTestAttempt(updatedAttempt);
-    // _emitCompletedTests is called inside updateTestAttempt
+    // _emitCompletedTests and _emitPendingTests called inside updateTestAttempt
   }
 
   @override
@@ -279,12 +360,14 @@ class StudyRepository implements IStudyRepository {
     return null;
   }
 
+  @override
   Stream<List<TestAttemptWithModule>> getCompletedTests() async* {
     final db = await _dbHelper.database;
     final results = await db.rawQuery('''
-      SELECT t.*, m.title as module_title 
+      SELECT t.*, COALESCE(cn.title, m.title) as module_title 
       FROM test_attempts t
       INNER JOIN modules m ON t.module_id = m.id
+      LEFT JOIN content_nodes cn ON t.node_id = cn.id
       WHERE t.status = 'COMPLETED'
       ORDER BY t.timestamp DESC
     ''');
@@ -304,9 +387,10 @@ class StudyRepository implements IStudyRepository {
   Stream<List<TestAttemptWithModule>> getPendingTests() async* {
     final db = await _dbHelper.database;
     final results = await db.rawQuery('''
-      SELECT t.*, m.title as module_title 
+      SELECT t.*, COALESCE(cn.title, m.title) as module_title 
       FROM test_attempts t
       INNER JOIN modules m ON t.module_id = m.id
+      LEFT JOIN content_nodes cn ON t.node_id = cn.id
       WHERE t.status = 'PENDING'
       ORDER BY t.timestamp DESC
     ''');
@@ -317,13 +401,17 @@ class StudyRepository implements IStudyRepository {
         moduleTitle: e['module_title'] as String,
       );
     }).toList();
+
+    yield* _pendingTestsController.stream;
   }
 
   @override
   Future<void> deleteTestAttempt(int attemptId) async {
     final db = await _dbHelper.database;
+    await db.delete('user_answers', where: 'test_attempt_id = ?', whereArgs: [attemptId]);
     await db.delete('test_attempts', where: 'id = ?', whereArgs: [attemptId]);
-    _emitCompletedTests();
+    await _emitPendingTests();
+    await _emitCompletedTests();
   }
 
   @override

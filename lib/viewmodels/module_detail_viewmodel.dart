@@ -66,18 +66,54 @@ class ModuleDetailUiState {
   }
 }
 
+class ChatParams {
+  final int moduleId;
+  final int? nodeId;
+  final String? lessonTitle;
+  final String? lessonContent;
+
+  const ChatParams({
+    required this.moduleId,
+    this.nodeId,
+    this.lessonTitle,
+    this.lessonContent,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ChatParams &&
+          runtimeType == other.runtimeType &&
+          moduleId == other.moduleId &&
+          nodeId == other.nodeId;
+
+  @override
+  int get hashCode => moduleId.hashCode ^ (nodeId?.hashCode ?? 0);
+}
+
 class ModuleDetailViewModel extends StateNotifier<ModuleDetailUiState> {
   final Ref ref;
-  final int moduleId;
+  final ChatParams params;
 
-  ModuleDetailViewModel(this.ref, this.moduleId)
+  ModuleDetailViewModel(this.ref, this.params)
     : super(const ModuleDetailUiState()) {
-    _loadModuleTitle();
+    _loadTitle();
   }
 
-  Future<void> _loadModuleTitle() async {
+  Future<void> _loadTitle() async {
     final repository = ref.read(studyRepositoryProvider);
-    final module = await repository.getModuleById(moduleId);
+    if (params.nodeId != null) {
+      final node = await repository.getContentNodeById(params.nodeId!);
+      if (node != null && node.title.isNotEmpty) {
+        state = state.copyWith(moduleTitle: node.title);
+        return;
+      }
+    }
+    if (params.lessonTitle != null && params.lessonTitle!.isNotEmpty) {
+      state = state.copyWith(moduleTitle: params.lessonTitle!);
+      return;
+    }
+    final module = await repository.getModuleById(params.moduleId);
     if (module != null) {
       state = state.copyWith(moduleTitle: module.title);
     }
@@ -120,15 +156,49 @@ class ModuleDetailViewModel extends StateNotifier<ModuleDetailUiState> {
 
     try {
       final repository = ref.read(studyRepositoryProvider);
-      final submodules = await repository
-          .getSubmodulesForModule(moduleId)
-          .first
-          .timeout(const Duration(seconds: 20));
-      final contextContent = submodules.map((s) => s.contentMd).join("\n\n");
+
+      String contextContent = '';
+      String topicTitle = state.moduleTitle;
+
+      // 1. If nodeId is specified, fetch the specific node content
+      if (params.nodeId != null) {
+        final node = await repository.getContentNodeById(params.nodeId!);
+        if (node != null && node.contentMd.trim().isNotEmpty) {
+          contextContent = node.contentMd.trim();
+          if (node.title.trim().isNotEmpty) {
+            topicTitle = node.title.trim();
+          }
+        }
+      }
+
+      // 2. If lessonContent is provided directly
+      if (contextContent.isEmpty &&
+          params.lessonContent != null &&
+          params.lessonContent!.trim().isNotEmpty) {
+        contextContent = params.lessonContent!.trim();
+        if (params.lessonTitle != null && params.lessonTitle!.trim().isNotEmpty) {
+          topicTitle = params.lessonTitle!.trim();
+        }
+      }
+
+      // 3. Fallback: only if no specific lesson is found, load submodules of module
+      if (contextContent.isEmpty) {
+        final submodules = await repository
+            .getSubmodulesForModule(params.moduleId)
+            .first
+            .timeout(const Duration(seconds: 20));
+        contextContent = submodules.map((s) => s.contentMd).join("\n\n");
+      }
+
+      // Safety cap: never send more than 12,000 characters to prevent TPM overflow on Groq
+      if (contextContent.length > 12000) {
+        contextContent = contextContent.substring(0, 12000);
+      }
+
       final systemMessage = Message(
         role: 'system',
         content:
-            "Eres un tutor experto en esta materia. Tu objetivo es ayudar al estudiante a entender el siguiente contenido. DEBES basar tus respuestas estrictamente en este contenido. Si te preguntan algo fuera de este tema, indica amablemente que solo puedes responder sobre la materia.\n\nCONTENIDO DE LA MATERIA:\n$contextContent",
+            "Eres un tutor experto en '$topicTitle'. Tu objetivo es ayudar al estudiante a entender el siguiente contenido. DEBES basar tus respuestas estrictamente en este contenido. Si te preguntan algo fuera de este tema, indica amablemente que solo puedes responder sobre la materia.\n\nCONTENIDO DE LA LECCIÓN / TEMA:\n$contextContent",
       );
       final historyForApi = currentHistory.length > 10
           ? currentHistory.sublist(currentHistory.length - 10)
@@ -197,7 +267,7 @@ final moduleDetailViewModelProvider =
     StateNotifierProvider.family<
       ModuleDetailViewModel,
       ModuleDetailUiState,
-      int
-    >((ref, moduleId) {
-      return ModuleDetailViewModel(ref, moduleId);
+      ChatParams
+    >((ref, params) {
+      return ModuleDetailViewModel(ref, params);
     });

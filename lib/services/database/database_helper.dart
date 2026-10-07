@@ -4,7 +4,7 @@ import 'package:path_provider/path_provider.dart';
 
 class DatabaseHelper {
   static const _databaseName = "aprende_mas.db";
-  static const _databaseVersion = 4;
+  static const _databaseVersion = 5;
 
   // Singleton pattern
   DatabaseHelper._privateConstructor();
@@ -79,6 +79,7 @@ class DatabaseHelper {
       CREATE TABLE questions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         module_id INTEGER NOT NULL,
+        node_id INTEGER DEFAULT NULL,
         question_text TEXT NOT NULL,
         option_a TEXT NOT NULL,
         option_b TEXT NOT NULL,
@@ -86,7 +87,8 @@ class DatabaseHelper {
         option_d TEXT NOT NULL,
         correct_answer TEXT NOT NULL,
         explanation_text TEXT NOT NULL,
-        FOREIGN KEY (module_id) REFERENCES modules (id) ON DELETE CASCADE
+        FOREIGN KEY (module_id) REFERENCES modules (id) ON DELETE CASCADE,
+        FOREIGN KEY (node_id) REFERENCES content_nodes (id) ON DELETE CASCADE
       )
     ''');
 
@@ -94,13 +96,15 @@ class DatabaseHelper {
       CREATE TABLE test_attempts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         module_id INTEGER NOT NULL,
+        node_id INTEGER DEFAULT NULL,
         timestamp INT NOT NULL,
         score REAL NOT NULL,
         status TEXT NOT NULL,
         total_questions INTEGER NOT NULL DEFAULT 0,
         correct_answers INTEGER NOT NULL DEFAULT 0,
         current_question_index INTEGER NOT NULL DEFAULT 0,
-        FOREIGN KEY (module_id) REFERENCES modules (id) ON DELETE CASCADE
+        FOREIGN KEY (module_id) REFERENCES modules (id) ON DELETE CASCADE,
+        FOREIGN KEY (node_id) REFERENCES content_nodes (id) ON DELETE CASCADE
       )
     ''');
 
@@ -160,6 +164,14 @@ class DatabaseHelper {
     if (oldVersion < 4) {
       await db.execute(
         "ALTER TABLE subjects ADD COLUMN repository_source TEXT NOT NULL DEFAULT 'joss-red'",
+      );
+    }
+    if (oldVersion < 5) {
+      await db.execute(
+        'ALTER TABLE questions ADD COLUMN node_id INTEGER DEFAULT NULL',
+      );
+      await db.execute(
+        'ALTER TABLE test_attempts ADD COLUMN node_id INTEGER DEFAULT NULL',
       );
     }
   }

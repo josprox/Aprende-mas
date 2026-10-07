@@ -6,19 +6,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ChatScreen extends StatelessWidget {
   final int moduleId;
+  final int? nodeId;
+  final String? lessonTitle;
+  final String? lessonContent;
 
-  const ChatScreen({super.key, required this.moduleId});
+  const ChatScreen({
+    super.key,
+    required this.moduleId,
+    this.nodeId,
+    this.lessonTitle,
+    this.lessonContent,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Asistente IA"),
+        title: Text(lessonTitle?.isNotEmpty == true ? lessonTitle! : "Asistente IA"),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 12),
             child: IconButton.filledTonal(
-              tooltip: "Asistente del módulo",
+              tooltip: "Asistente de la lección",
               onPressed: null,
               icon: Icon(Icons.auto_awesome_rounded),
             ),
@@ -29,7 +38,12 @@ class ChatScreen extends StatelessWidget {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 860),
-            child: EmbeddedChatView(moduleId: moduleId),
+            child: EmbeddedChatView(
+              moduleId: moduleId,
+              nodeId: nodeId,
+              lessonTitle: lessonTitle,
+              lessonContent: lessonContent,
+            ),
           ),
         ),
       ),
@@ -40,8 +54,17 @@ class ChatScreen extends StatelessWidget {
 /// Widget reutilizable para incrustar el chat en pantalla completa o paneles divididos (Split View)
 class EmbeddedChatView extends ConsumerStatefulWidget {
   final int moduleId;
+  final int? nodeId;
+  final String? lessonTitle;
+  final String? lessonContent;
 
-  const EmbeddedChatView({super.key, required this.moduleId});
+  const EmbeddedChatView({
+    super.key,
+    required this.moduleId,
+    this.nodeId,
+    this.lessonTitle,
+    this.lessonContent,
+  });
 
   @override
   ConsumerState<EmbeddedChatView> createState() => _EmbeddedChatViewState();
@@ -68,16 +91,22 @@ class _EmbeddedChatViewState extends ConsumerState<EmbeddedChatView> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(moduleDetailViewModelProvider(widget.moduleId));
+    final chatParams = ChatParams(
+      moduleId: widget.moduleId,
+      nodeId: widget.nodeId,
+      lessonTitle: widget.lessonTitle,
+      lessonContent: widget.lessonContent,
+    );
+    final state = ref.watch(moduleDetailViewModelProvider(chatParams));
     final notifier = ref.read(
-      moduleDetailViewModelProvider(widget.moduleId).notifier,
+      moduleDetailViewModelProvider(chatParams).notifier,
     );
     final chatState = state.chatUiState;
     final scheme = Theme.of(context).colorScheme;
 
     ref.listen(
       moduleDetailViewModelProvider(
-        widget.moduleId,
+        chatParams,
       ).select((s) => s.chatUiState.chatHistory.length),
       (prev, next) {
         WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());

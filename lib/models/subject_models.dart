@@ -135,6 +135,7 @@ class ContentNode {
 class Question {
   final int? id;
   final int moduleId;
+  final int? nodeId;
   final String questionText;
   final String optionA;
   final String optionB;
@@ -146,6 +147,7 @@ class Question {
   Question({
     this.id,
     required this.moduleId,
+    this.nodeId,
     required this.questionText,
     required this.optionA,
     required this.optionB,
@@ -159,6 +161,7 @@ class Question {
     return Question(
       id: map['id'],
       moduleId: map['module_id'],
+      nodeId: map['node_id'],
       questionText: map['question_text'],
       optionA: map['option_a'],
       optionB: map['option_b'],
@@ -173,6 +176,7 @@ class Question {
     return {
       if (id != null) 'id': id,
       'module_id': moduleId,
+      if (nodeId != null) 'node_id': nodeId,
       'question_text': questionText,
       'option_a': optionA,
       'option_b': optionB,
@@ -187,6 +191,7 @@ class Question {
 class TestAttempt {
   final int? id;
   final int moduleId;
+  final int? nodeId;
   final int timestamp;
   final double score;
   final String status;
@@ -197,6 +202,7 @@ class TestAttempt {
   TestAttempt({
     this.id,
     required this.moduleId,
+    this.nodeId,
     required this.timestamp,
     required this.score,
     required this.status,
@@ -209,8 +215,9 @@ class TestAttempt {
     return TestAttempt(
       id: map['id'],
       moduleId: map['module_id'],
+      nodeId: map['node_id'],
       timestamp: map['timestamp'],
-      score: map['score'],
+      score: (map['score'] as num?)?.toDouble() ?? 0.0,
       status: map['status'],
       totalQuestions: map['total_questions'] ?? 0,
       correctAnswers: map['correct_answers'] ?? 0,
@@ -222,6 +229,7 @@ class TestAttempt {
     return {
       if (id != null) 'id': id,
       'module_id': moduleId,
+      if (nodeId != null) 'node_id': nodeId,
       'timestamp': timestamp,
       'score': score,
       'status': status,
@@ -234,6 +242,7 @@ class TestAttempt {
   TestAttempt copyWith({
     int? id,
     int? moduleId,
+    int? nodeId,
     int? timestamp,
     double? score,
     String? status,
@@ -244,6 +253,7 @@ class TestAttempt {
     return TestAttempt(
       id: id ?? this.id,
       moduleId: moduleId ?? this.moduleId,
+      nodeId: nodeId ?? this.nodeId,
       timestamp: timestamp ?? this.timestamp,
       score: score ?? this.score,
       status: status ?? this.status,

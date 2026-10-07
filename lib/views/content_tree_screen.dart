@@ -81,20 +81,41 @@ class _ContentTreeScreenState extends ConsumerState<ContentTreeScreen> {
         : repository.getChildrenForNode(widget.node!.id);
   }
 
-  void _openChat(int moduleId) {
+  void _openChat(
+    int moduleId, {
+    int? nodeId,
+    String? lessonTitle,
+    String? lessonContent,
+  }) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ChatScreen(moduleId: moduleId),
+        builder: (_) => ChatScreen(
+          moduleId: moduleId,
+          nodeId: nodeId,
+          lessonTitle: lessonTitle,
+          lessonContent: lessonContent,
+        ),
       ),
     );
   }
 
-  void _openQuiz(int moduleId) {
+  void _openQuiz(
+    int moduleId, {
+    int? nodeId,
+    String? lessonTitle,
+    String? lessonContent,
+  }) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => QuizScreen(moduleId: moduleId, attemptId: 0),
+        builder: (_) => QuizScreen(
+          moduleId: moduleId,
+          attemptId: 0,
+          nodeId: nodeId,
+          lessonTitle: lessonTitle,
+          lessonContent: lessonContent,
+        ),
       ),
     );
   }
@@ -366,7 +387,12 @@ class _ContentTreeScreenState extends ConsumerState<ContentTreeScreen> {
                                       ),
                                     ),
                                     FilledButton.icon(
-                                      onPressed: () => _openQuiz(moduleId),
+                                      onPressed: () => _openQuiz(
+                                        moduleId,
+                                        nodeId: node.id,
+                                        lessonTitle: node.title,
+                                        lessonContent: node.contentMd,
+                                      ),
                                       icon: const Icon(Icons.quiz_rounded, size: 18),
                                       label: const Text('Generar test'),
                                     ),
@@ -438,7 +464,12 @@ class _ContentTreeScreenState extends ConsumerState<ContentTreeScreen> {
                     ),
                     // Live embedded chat
                     Expanded(
-                      child: EmbeddedChatView(moduleId: moduleId),
+                      child: EmbeddedChatView(
+                        moduleId: moduleId,
+                        nodeId: node.id,
+                        lessonTitle: node.title,
+                        lessonContent: node.contentMd,
+                      ),
                     ),
                   ],
                 ),
@@ -476,7 +507,12 @@ class _ContentTreeScreenState extends ConsumerState<ContentTreeScreen> {
                   children: [
                     FloatingActionButton.extended(
                       heroTag: 'chat_${widget.node!.id}',
-                      onPressed: () => _openChat(widget.node!.moduleId!),
+                      onPressed: () => _openChat(
+                        widget.node!.moduleId!,
+                        nodeId: widget.node!.id,
+                        lessonTitle: widget.node!.title,
+                        lessonContent: widget.node!.contentMd,
+                      ),
                       icon: const Icon(Icons.auto_awesome_rounded),
                       label: const Text('Preguntar a IA'),
                       backgroundColor: scheme.secondaryContainer,
@@ -485,7 +521,12 @@ class _ContentTreeScreenState extends ConsumerState<ContentTreeScreen> {
                     const SizedBox(height: 12),
                     FloatingActionButton.extended(
                       heroTag: 'quiz_${widget.node!.id}',
-                      onPressed: () => _openQuiz(widget.node!.moduleId!),
+                      onPressed: () => _openQuiz(
+                        widget.node!.moduleId!,
+                        nodeId: widget.node!.id,
+                        lessonTitle: widget.node!.title,
+                        lessonContent: widget.node!.contentMd,
+                      ),
                       icon: const Icon(Icons.quiz_rounded),
                       label: const Text('Generar test'),
                     ),
@@ -660,8 +701,18 @@ class _ContentTreeScreenState extends ConsumerState<ContentTreeScreen> {
 class _SubnodeOrContentDetail extends ConsumerWidget {
   final int subjectId;
   final ContentNode node;
-  final void Function(int moduleId) onOpenChat;
-  final void Function(int moduleId) onOpenQuiz;
+  final void Function(
+    int moduleId, {
+    int? nodeId,
+    String? lessonTitle,
+    String? lessonContent,
+  }) onOpenChat;
+  final void Function(
+    int moduleId, {
+    int? nodeId,
+    String? lessonTitle,
+    String? lessonContent,
+  }) onOpenQuiz;
 
   const _SubnodeOrContentDetail({
     required this.subjectId,
@@ -729,13 +780,23 @@ class _SubnodeOrContentDetail extends ConsumerWidget {
                           Row(
                             children: [
                               FilledButton.icon(
-                                onPressed: () => onOpenQuiz(node.moduleId!),
+                                onPressed: () => onOpenQuiz(
+                                  node.moduleId!,
+                                  nodeId: node.id,
+                                  lessonTitle: node.title,
+                                  lessonContent: node.contentMd,
+                                ),
                                 icon: const Icon(Icons.quiz_rounded),
                                 label: const Text('Generar Test'),
                               ),
                               const SizedBox(width: 12),
                               FilledButton.tonalIcon(
-                                onPressed: () => onOpenChat(node.moduleId!),
+                                onPressed: () => onOpenChat(
+                                  node.moduleId!,
+                                  nodeId: node.id,
+                                  lessonTitle: node.title,
+                                  lessonContent: node.contentMd,
+                                ),
                                 icon: const Icon(Icons.auto_awesome_rounded),
                                 label: const Text('Preguntar a IA'),
                               ),

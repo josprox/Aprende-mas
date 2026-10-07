@@ -79,6 +79,9 @@ class AppRoutes {
           builder: (context) => QuizScreen(
             moduleId: args['moduleId'] as int,
             attemptId: args['attemptId'] as int? ?? 0,
+            nodeId: args['nodeId'] as int?,
+            lessonTitle: args['lessonTitle'] as String?,
+            lessonContent: args['lessonContent'] as String?,
           ),
         );
       }

@@ -57,39 +57,49 @@ class QuizUiState {
 
 class QuizViewModel extends StateNotifier<QuizUiState> {
   final Ref ref;
-  final int moduleId;
-  final int attemptId;
+  final QuizParams params;
 
-  QuizViewModel(this.ref, this.moduleId, this.attemptId)
+  QuizViewModel(this.ref, this.params)
     : super(const QuizUiState()) {
-    _init(moduleId, attemptId);
+    _init();
   }
 
   TestAttempt? _currentAttempt;
   TestAttempt? get currentAttempt => _currentAttempt;
 
-  Future<void> _init(int moduleId, int attemptId) async {
-    if (attemptId == 0) {
-      await _loadNewTest(moduleId);
+  Future<void> _init() async {
+    if (params.attemptId == 0) {
+      await _loadNewTest();
     } else {
-      await _loadAndResumeTest(moduleId, attemptId);
+      await _loadAndResumeTest();
     }
   }
 
-  Future<void> _loadNewTest(int moduleId) async {
+  Future<void> retry() async {
+    await _init();
+  }
+
+  Future<void> _loadNewTest() async {
     state = state.copyWith(isLoading: true);
     final repository = ref.read(studyRepositoryProvider);
 
-    final questions = await repository.getOrCreateQuestionsForModule(moduleId);
+    final questions = await repository.getOrCreateQuestionsForModule(
+      params.moduleId,
+      nodeId: params.nodeId,
+      lessonTitle: params.lessonTitle,
+      lessonContent: params.lessonContent,
+    );
 
     if (questions.isNotEmpty) {
       final newAttemptId = await repository.createTestAttempt(
-        moduleId,
+        params.moduleId,
         questions.length,
+        nodeId: params.nodeId,
       );
       _currentAttempt = TestAttempt(
         id: newAttemptId,
-        moduleId: moduleId,
+        moduleId: params.moduleId,
+        nodeId: params.nodeId,
         status: "PENDING",
         totalQuestions: questions.length,
         currentQuestionIndex: 0,
@@ -102,16 +112,22 @@ class QuizViewModel extends StateNotifier<QuizUiState> {
     state = state.copyWith(questions: questions, isLoading: false);
   }
 
-  Future<void> _loadAndResumeTest(int moduleId, int attemptId) async {
+  Future<void> _loadAndResumeTest() async {
     state = state.copyWith(isLoading: true);
     final repository = ref.read(studyRepositoryProvider);
 
-    _currentAttempt = await repository.getTestAttemptById(attemptId);
-    final questions = await repository.getOrCreateQuestionsForModule(moduleId);
-    final savedAnswers = await repository.getUserAnswersForAttempt(attemptId);
+    _currentAttempt = await repository.getTestAttemptById(params.attemptId);
+    final effectiveNodeId = params.nodeId ?? _currentAttempt?.nodeId;
+    final questions = await repository.getOrCreateQuestionsForModule(
+      params.moduleId,
+      nodeId: effectiveNodeId,
+      lessonTitle: params.lessonTitle,
+      lessonContent: params.lessonContent,
+    );
+    final savedAnswers = await repository.getUserAnswersForAttempt(params.attemptId);
 
     if (_currentAttempt == null) {
-      await _loadNewTest(moduleId);
+      await _loadNewTest();
       return;
     }
 
@@ -270,13 +286,40 @@ class QuizViewModel extends StateNotifier<QuizUiState> {
   }
 }
 
-// Using a record for family parameters
-typedef QuizParams = (int moduleId, int attemptId);
+class QuizParams {
+  final int moduleId;
+  final int attemptId;
+  final int? nodeId;
+  final String? lessonTitle;
+  final String? lessonContent;
+
+  const QuizParams({
+    required this.moduleId,
+    this.attemptId = 0,
+    this.nodeId,
+    this.lessonTitle,
+    this.lessonContent,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is QuizParams &&
+          runtimeType == other.runtimeType &&
+          moduleId == other.moduleId &&
+          attemptId == other.attemptId &&
+          nodeId == other.nodeId;
+
+  @override
+  int get hashCode =>
+      moduleId.hashCode ^ attemptId.hashCode ^ (nodeId?.hashCode ?? 0);
+}
 
 final quizViewModelProvider =
-    StateNotifierProvider.family<QuizViewModel, QuizUiState, QuizParams>((
-      ref,
-      params,
-    ) {
-      return QuizViewModel(ref, params.$1, params.$2);
+    StateNotifierProvider.autoDispose.family<
+      QuizViewModel,
+      QuizUiState,
+      QuizParams
+    >((ref, params) {
+      return QuizViewModel(ref, params);
     });

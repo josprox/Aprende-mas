@@ -6,12 +6,22 @@ abstract class IStudyRepository {
   Stream<List<Submodule>> getSubmodulesForModule(int moduleId);
   Stream<List<ContentNode>> getRootNodesForSubject(int subjectId);
   Stream<List<ContentNode>> getChildrenForNode(int nodeId);
-  Future<List<Question>> getOrCreateQuestionsForModule(int moduleId);
+  Future<ContentNode?> getContentNodeById(int nodeId);
+  Future<List<Question>> getOrCreateQuestionsForModule(
+    int moduleId, {
+    int? nodeId,
+    String? lessonContent,
+    String? lessonTitle,
+  });
   Stream<List<TestAttemptWithModule>> getCompletedTests();
   Stream<List<TestAttemptWithModule>> getPendingTests();
-  Future<int> createTestAttempt(int moduleId, int totalQuestions);
+  Future<int> createTestAttempt(
+    int moduleId,
+    int totalQuestions, {
+    int? nodeId,
+  });
   Future<void> finishTestAttempt(TestAttempt attempt);
-  Future<TestAttempt?> findPendingTest(int moduleId);
+  Future<TestAttempt?> findPendingTest(int moduleId, {int? nodeId});
   Future<TestAttempt?> getTestAttemptById(int attemptId);
   Future<List<UserAnswer>> getUserAnswersForAttempt(int attemptId);
   Future<void> saveUserAnswer(UserAnswer answer);

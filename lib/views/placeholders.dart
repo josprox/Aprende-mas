@@ -48,10 +48,16 @@ class ModuleDetailScreen extends ConsumerWidget {
 class QuizScreen extends ConsumerWidget {
   final int moduleId;
   final int attemptId;
+  final int? nodeId;
+  final String? lessonTitle;
+  final String? lessonContent;
   const QuizScreen({
     super.key,
     required this.moduleId,
     required this.attemptId,
+    this.nodeId,
+    this.lessonTitle,
+    this.lessonContent,
   });
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
@@ -68,7 +74,16 @@ class TestReviewScreen extends ConsumerWidget {
 
 class ChatScreen extends ConsumerWidget {
   final int moduleId;
-  const ChatScreen({super.key, required this.moduleId});
+  final int? nodeId;
+  final String? lessonTitle;
+  final String? lessonContent;
+  const ChatScreen({
+    super.key,
+    required this.moduleId,
+    this.nodeId,
+    this.lessonTitle,
+    this.lessonContent,
+  });
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
       Center(child: Text("Chat $moduleId"));

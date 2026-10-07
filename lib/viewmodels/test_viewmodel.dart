@@ -49,6 +49,11 @@ class TestViewModel extends StateNotifier<AsyncValue<TestUiState>> {
   StreamSubscription? _pendingSubscription;
   StreamSubscription? _completedSubscription;
 
+  List<TestAttemptWithModule> _lastPending = [];
+  List<TestAttemptWithModule> _lastCompleted = [];
+  bool _pendingLoaded = false;
+  bool _completedLoaded = false;
+
   TestViewModel(this._repository) : super(const AsyncValue.loading()) {
     _init();
   }
@@ -58,23 +63,18 @@ class TestViewModel extends StateNotifier<AsyncValue<TestUiState>> {
     final pendingStream = _repository.getPendingTests();
     final completedStream = _repository.getCompletedTests();
 
-    List<TestAttemptWithModule> lastPending = [];
-    List<TestAttemptWithModule> lastCompleted = [];
-    bool pendingLoaded = false;
-    bool completedLoaded = false;
-
     void updateState() {
-      if (pendingLoaded && completedLoaded) {
+      if (_pendingLoaded && _completedLoaded) {
         state = AsyncValue.data(
-          TestUiState(pendingTests: lastPending, completedTests: lastCompleted),
+          TestUiState(pendingTests: _lastPending, completedTests: _lastCompleted),
         );
       }
     }
 
     _pendingSubscription = pendingStream.listen(
       (results) {
-        lastPending = results;
-        pendingLoaded = true;
+        _lastPending = results;
+        _pendingLoaded = true;
         updateState();
       },
       onError: (err, stack) {
@@ -84,8 +84,8 @@ class TestViewModel extends StateNotifier<AsyncValue<TestUiState>> {
 
     _completedSubscription = completedStream.listen(
       (results) {
-        lastCompleted = results;
-        completedLoaded = true;
+        _lastCompleted = results;
+        _completedLoaded = true;
         updateState();
       },
       onError: (err, stack) {
@@ -95,13 +95,16 @@ class TestViewModel extends StateNotifier<AsyncValue<TestUiState>> {
   }
 
   Future<void> deleteTestAttempt(int attemptId) async {
+    // 1. Optimistic update: immediately remove from current state
+    _lastPending = _lastPending.where((t) => t.attempt.id != attemptId).toList();
+    _lastCompleted = _lastCompleted.where((t) => t.attempt.id != attemptId).toList();
+    state = AsyncValue.data(
+      TestUiState(pendingTests: _lastPending, completedTests: _lastCompleted),
+    );
+
     try {
       await _repository.deleteTestAttempt(attemptId);
-      // Stream will automatically update the UI
     } catch (e) {
-      // Handle error gracefully, maybe show a snackbar in UI via a different provider/listener
-      // For now, we just log/rethrow or set error state if critical,
-      // but deleting a single item failure shouldn't crash the whole list state usually.
       print("Error deleting test attempt: $e");
     }
   }

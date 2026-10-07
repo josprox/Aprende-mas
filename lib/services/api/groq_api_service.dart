@@ -79,10 +79,15 @@ class GroqApiService {
     int moduleId,
   ) async {
     final apiKey = await getPersonalApiKey();
+    // Safety guard against TPM limit: max 12,000 characters
+    final safeContent = moduleContent.length > 12000
+        ? '${moduleContent.substring(0, 12000)}\n\n[...contenido resumido para respetar límites de IA...]'
+        : moduleContent;
+
     try {
       final content = apiKey == null
-          ? await _generateQuestionsWithServer(moduleContent, moduleId)
-          : await _generateQuestionsWithPersonalKey(moduleContent, apiKey);
+          ? await _generateQuestionsWithServer(safeContent, moduleId)
+          : await _generateQuestionsWithPersonalKey(safeContent, apiKey);
       return _parseQuestions(content);
     } catch (error) {
       print('Error al generar preguntas: $error');
@@ -103,6 +108,7 @@ class GroqApiService {
       data: GroqRequest(
         messages: [Message(role: 'user', content: _quizPrompt(moduleContent))],
         model: model,
+        max_tokens: 4096,
         response_format: const ResponseFormat(type: 'json_object'),
       ).toJson(),
       options: Options(headers: {'Authorization': 'Bearer $apiKey'}),
@@ -149,20 +155,46 @@ class GroqApiService {
         .replaceFirst(RegExp(r'^```json\s*'), '')
         .replaceFirst(RegExp(r'\s*```$'), '');
     if (jsonContent.isEmpty) return [];
-    return QuizPayload.fromJson(
-      jsonDecode(jsonContent) as Map<String, dynamic>,
-    ).questions;
+    try {
+      return QuizPayload.fromJson(
+        jsonDecode(jsonContent) as Map<String, dynamic>,
+      ).questions;
+    } catch (_) {
+      final salvaged = _salvageQuestions(jsonContent);
+      if (salvaged.isNotEmpty) {
+        return salvaged;
+      }
+      rethrow;
+    }
+  }
+
+  List<QuizQuestion> _salvageQuestions(String raw) {
+    int lastBrace = raw.lastIndexOf('}');
+    while (lastBrace > 0) {
+      final candidate = '${raw.substring(0, lastBrace + 1)}]}';
+      try {
+        final decoded = jsonDecode(candidate);
+        if (decoded is Map<String, dynamic> && decoded['questions'] is List) {
+          final questions = QuizPayload.fromJson(decoded).questions;
+          if (questions.isNotEmpty) {
+            return questions;
+          }
+        }
+      } catch (_) {}
+      lastBrace = raw.lastIndexOf('}', lastBrace - 1);
+    }
+    return [];
   }
 
   String _quizPrompt(String moduleContent) =>
       '''
-ACTÚA COMO UN EXPERTO DISEÑADOR DE EXÁMENES DE CERTIFICACIÓN (EGEL, CCNA).
-Crea entre 15 y 30 preguntas de opción múltiple de nivel licenciatura basadas estrictamente en el siguiente contenido. Cada pregunta debe tener cuatro opciones A, B, C y D, exigir análisis, aplicación o comparación e incluir una explicación breve de la respuesta correcta.
+ACTÚA COMO UN EXPERTO DISEÑADOR DE EXÁMENES DE EVALUACIÓN EDUCATIVA.
+Crea entre 5 y 8 preguntas de opción múltiple basadas estrictamente en el siguiente contenido. Cada pregunta debe tener cuatro opciones breves A, B, C y D, exigir análisis o comprensión e incluir una explicación concisa (máximo 2 oraciones) de la respuesta correcta.
 
 Responde únicamente con JSON válido, sin Markdown, con esta estructura exacta:
 {"questions":[{"questionText":"...","optionA":"...","optionB":"...","optionC":"...","optionD":"...","correctAnswer":"C","explanationText":"..."}]}
 
-Contenido del módulo:
+Contenido de estudio:
 $moduleContent
 ''';
 
