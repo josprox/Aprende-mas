@@ -7,6 +7,7 @@ import 'package:aprende_mas/repositories/i_study_repository.dart';
 import 'package:aprende_mas/services/api/repository_api_service.dart';
 import 'package:aprende_mas/services/store_source_service.dart';
 import 'package:aprende_mas/viewmodels/providers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum RepositoryStatus { notInstalled, installed, updateAvailable }
@@ -137,7 +138,9 @@ class RepositoryStoreViewModel extends StateNotifier<RepositoryState> {
     RepositoryListResponse? jossResponse;
     try {
       jossResponse = await _apiService.getRepositories(page: page);
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('Error loading Joss Red repositories: $e\n$st');
+    }
     final currentItems = page == 1 ? <RepositoryItem>[] : state.items;
     final items = [...currentItems, ...?jossResponse?.data, ...externalItems];
     state = state.copyWith(

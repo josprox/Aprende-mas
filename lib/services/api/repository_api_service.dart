@@ -30,15 +30,13 @@ class RepositoryApiService {
   }
 
   void _updateHeaders() {
-    final activeToken = (_userToken != null && _userToken!.isNotEmpty)
-        ? _userToken
-        : defaultApiToken;
-
     _dio.options.headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      if (activeToken != null && activeToken.isNotEmpty)
-        'Authorization': 'Bearer $activeToken',
+      if (defaultApiToken.isNotEmpty)
+        'Authorization': 'Bearer $defaultApiToken',
+      if (_userToken != null && _userToken!.isNotEmpty)
+        'X-User-Token': _userToken!,
     };
   }
 
@@ -50,18 +48,16 @@ class RepositoryApiService {
   }) async {
     try {
       final external = sourceUrl != null && sourceUrl.isNotEmpty;
-      final activeToken = (token != null && token.isNotEmpty)
-          ? token
-          : ((_userToken != null && _userToken!.isNotEmpty)
-                ? _userToken
-                : defaultApiToken);
-
       final options = Options(
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          if (!external && activeToken != null && activeToken.isNotEmpty)
-            'Authorization': 'Bearer $activeToken',
+          if (external && token != null && token.isNotEmpty)
+            'Authorization': 'Bearer $token'
+          else if (!external && defaultApiToken.isNotEmpty)
+            'Authorization': 'Bearer $defaultApiToken',
+          if (_userToken != null && _userToken!.isNotEmpty)
+            'X-User-Token': _userToken!,
         },
       );
 
@@ -88,18 +84,16 @@ class RepositoryApiService {
   }) async {
     try {
       final external = sourceUrl != null && sourceUrl.isNotEmpty;
-      final activeToken = (token != null && token.isNotEmpty)
-          ? token
-          : ((_userToken != null && _userToken!.isNotEmpty)
-                ? _userToken
-                : defaultApiToken);
-
       final options = Options(
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          if (!external && activeToken != null && activeToken.isNotEmpty)
-            'Authorization': 'Bearer $activeToken',
+          if (external && token != null && token.isNotEmpty)
+            'Authorization': 'Bearer $token'
+          else if (!external && defaultApiToken.isNotEmpty)
+            'Authorization': 'Bearer $defaultApiToken',
+          if (_userToken != null && _userToken!.isNotEmpty)
+            'X-User-Token': _userToken!,
         },
       );
 
